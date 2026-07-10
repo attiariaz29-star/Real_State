@@ -1,0 +1,19 @@
+{
+  "name": "nestfinder-functions",
+  "description": "Firebase Cloud Functions for NestFinder AI (real AI-powered property search)",
+  "engines": {
+    "node": "20"
+  },
+  "main": "index.js",
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.1.0",
+    "firebase-functions": "^5.0.0"
+  },
+  "private": true
+}

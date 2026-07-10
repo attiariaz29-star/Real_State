@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="NestFinder AI Area Insights – Real-time area analytics, market trends, price distribution, and investment intelligence powered by live Firebase property data and Groq AI.">
+  <title>Area Insights – NestFinder AI</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="area-insight.css">
+</head>
+<body>
+
+  <a href="#ai-dash-main" class="skip-link">Skip to main content</a>
+
+  <!-- ========== NAVBAR (shared) ========== -->
+  <div id="navbar-root"></div>
+
+  <!-- ========== DASHBOARD LOADING ========== -->
+  <div class="ai-dash-loading" id="dashLoading">
+    <div class="ai-dash-loader"></div>
+    <p>Loading your area intelligence…</p>
+  </div>
+
+  <!-- ========== HERO BANNER ========== -->
+  <header class="ai-hero" id="main-content">
+    <div class="ai-hero-bg"></div>
+    <div class="ai-hero-particles" aria-hidden="true"></div>
+    <div class="container position-relative z-2">
+      <div class="d-flex justify-content-end mb-2">
+        <span class="badge bg-warning text-dark fw-semibold px-3 py-2" id="dataCountBadge">0 listings</span>
+      </div>
+      <div class="row justify-content-center text-center">
+        <div class="col-lg-9">
+
+          <div class="ai-badge-pill mb-4">
+            <i class="bi bi-compass-fill me-2"></i>Live Area Intelligence Dashboard
+          </div>
+
+          <h1 class="ai-hero-title">Area <span class="text-gradient">Insights</span></h1>
+          <p class="ai-hero-sub" id="dashSubtitle">Real-time area analytics, market trends &amp; investment intelligence powered by your Firebase property data</p>
+
+          <!-- Filter Bar -->
+          <div class="pref-wizard mt-4" id="filterWizard">
+            <div class="row g-2 justify-content-center">
+              <div class="col-auto">
+                <div class="pref-select-wrap">
+                  <i class="bi bi-building"></i>
+                  <select class="form-select rounded-pill pref-select" id="filterCity" aria-label="Filter by city"><option value="">All Cities</option></select>
+                </div>
+              </div>
+              <div class="col-auto">
+                <div class="pref-select-wrap">
+                  <i class="bi bi-tag"></i>
+                  <select class="form-select rounded-pill pref-select" id="filterPurpose" aria-label="Filter by purpose">
+                    <option value="">All</option>
+                    <option value="buy">Buy</option>
+                    <option value="rent">Rent</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="col-auto">
+                <button class="btn btn-primary rounded-pill px-4 fw-semibold" id="filterApplyBtn">
+                  <i class="bi bi-search me-2"></i>Search
+                </button>
+              </div>
+              <div class="col-auto">
+                <button class="btn btn-outline-secondary rounded-pill px-3 fw-semibold" id="refreshBtn">
+                  <i class="bi bi-arrow-clockwise me-1"></i> Refresh
+                </button>
+              </div>
+            </div>
+          </div>
+
+
+
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ========== DASHBOARD MAIN ========== -->
+  <main class="ai-dashboard" id="ai-dash-main">
+    <div class="ai-dash-container">
+
+      <!-- Stats Row -->
+      <div class="ai-stats-row" id="statsRow">
+        <div class="ai-stat-card ai-animate ai-animate-1">
+          <div class="ai-stat-icon gold"><i class="bi bi-building"></i></div>
+          <div class="ai-stat-val" id="statAreas">—</div>
+          <div class="ai-stat-lbl">Areas Analyzed</div>
+          <div class="ai-stat-chg" id="statAreasChg"></div>
+        </div>
+        <div class="ai-stat-card ai-animate ai-animate-2">
+          <div class="ai-stat-icon green"><i class="bi bi-cash-stack"></i></div>
+          <div class="ai-stat-val" id="statAvgPrice">—</div>
+          <div class="ai-stat-lbl">Avg Listing Price</div>
+          <div class="ai-stat-chg up" id="statPriceChg"></div>
+        </div>
+        <div class="ai-stat-card ai-animate ai-animate-3">
+          <div class="ai-stat-icon blue"><i class="bi bi-graph-up-arrow"></i></div>
+          <div class="ai-stat-val" id="statGrowth">—</div>
+          <div class="ai-stat-lbl">Best YoY Growth</div>
+          <div class="ai-stat-chg up" id="statGrowthChg"></div>
+        </div>
+        <div class="ai-stat-card ai-animate ai-animate-4">
+          <div class="ai-stat-icon red"><i class="bi bi-tag"></i></div>
+          <div class="ai-stat-val" id="statProperties">—</div>
+          <div class="ai-stat-lbl">Total Properties</div>
+          <div class="ai-stat-chg" id="statPropsChg"></div>
+        </div>
+        <div class="ai-stat-card ai-animate ai-animate-5">
+          <div class="ai-stat-icon gold"><i class="bi bi-pie-chart"></i></div>
+          <div class="ai-stat-val" id="statBuyRent">—</div>
+          <div class="ai-stat-lbl">Buy / Rent Ratio</div>
+          <div class="ai-stat-chg up" id="statBuyRentChg"></div>
+        </div>
+      </div>
+
+      <!-- AI Summary Banner -->
+      <div class="ai-summary-banner d-flex align-items-start gap-3 ai-animate" id="summaryBanner">
+        <div class="ai-summary-icon"><i class="bi bi-robot"></i></div>
+        <div>
+          <div class="fw-bold mb-1" style="color:var(--ai-gold);font-size:0.85rem;text-transform:uppercase;letter-spacing:0.5px;">AI-Generated Market Summary</div>
+          <p class="ai-summary-text mb-0" id="summaryText">Analyzing your property database to generate area intelligence…</p>
+        </div>
+      </div>
+
+      <!-- Main Insight Grid -->
+      <div class="ai-insight-grid">
+
+        <!-- Card: Price Analytics -->
+        <div class="ai-insight-card ai-animate" id="cardPriceAnalytics">
+          <div class="ai-insight-hdr">
+            <i class="bi bi-currency-rupee"></i>
+            <h3>Price Analytics by Area</h3>
+            <span class="badge bg-warning text-dark" id="priceAnalyticsCount">—</span>
+          </div>
+          <div id="priceAnalyticsBody">
+            <div class="ai-insufficient">
+              <i class="bi bi-bar-chart"></i>
+              <h4>Insufficient Data</h4>
+              <p>Add properties with price information to see area-level price analytics.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card: Property Distribution -->
+        <div class="ai-insight-card ai-animate" id="cardDistribution">
+          <div class="ai-insight-hdr">
+            <i class="bi bi-pie-chart-fill"></i>
+            <h3>Property Distribution</h3>
+            <span class="badge bg-warning text-dark" id="distCount">—</span>
+          </div>
+          <div id="distributionBody">
+            <div class="ai-insufficient">
+              <i class="bi bi-grid-3x3-gap"></i>
+              <h4>Insufficient Data</h4>
+              <p>Property distribution charts will appear once listings exist in the database.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card: Area Rankings (full width) -->
+        <div class="ai-insight-card full ai-animate" id="cardAreaRankings">
+          <div class="ai-insight-hdr">
+            <i class="bi bi-trophy-fill"></i>
+            <h3>Area Rankings & Metrics</h3>
+            <span class="badge bg-warning text-dark" id="areaRankCount">—</span>
+          </div>
+          <div id="areaRankingsBody">
+            <div class="ai-insufficient">
+              <i class="bi bi-geo-alt"></i>
+              <h4>Insufficient Data</h4>
+              <p>Area rankings require multiple properties across different locations to compute meaningful comparisons.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card: Investment Opportunities -->
+        <div class="ai-insight-card ai-animate" id="cardInvestment">
+          <div class="ai-insight-hdr">
+            <i class="bi bi-graph-up-arrow"></i>
+            <h3>Top Investment Opportunities</h3>
+            <span class="badge bg-warning text-dark" id="investCount">—</span>
+          </div>
+          <div id="investmentBody">
+            <div class="ai-insufficient">
+              <i class="bi bi-cash"></i>
+              <h4>Insufficient Data</h4>
+              <p>Investment analysis requires price history and property type data to calculate ROI projections.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card: Area Comparison -->
+        <div class="ai-insight-card ai-animate" id="cardComparison">
+          <div class="ai-insight-hdr">
+            <i class="bi bi-arrow-left-right"></i>
+            <h3>Compare Two Areas</h3>
+          </div>
+          <div id="comparisonBody">
+            <div class="ai-insufficient">
+              <i class="bi bi-layers"></i>
+              <h4>Insufficient Data</h4>
+              <p>Add at least two properties in different areas to enable comparison analysis.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card: Similar Areas -->
+        <div class="ai-insight-card ai-animate" id="cardSimilar">
+          <div class="ai-insight-hdr">
+            <i class="bi bi-diagram-3-fill"></i>
+            <h3>Similar Area Recommendations</h3>
+            <span class="badge bg-warning text-dark" id="similarCount">—</span>
+          </div>
+          <div id="similarBody">
+            <div class="ai-insufficient">
+              <i class="bi bi-node-plus"></i>
+              <h4>Insufficient Data</h4>
+              <p>Similar area recommendations need multiple areas with comparable metrics.</p>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /insight-grid -->
+
+      <!-- Data Freshness Footer -->
+      <div class="text-center pb-4 pt-2">
+        <small class="text-muted" id="dataFreshness" style="font-size:0.72rem;opacity:0.6;">
+          <i class="bi bi-database"></i> All data computed live from Firebase Realtime Database &bull; AI insights by Groq
+        </small>
+      </div>
+
+    </div><!-- /container -->
+  </main>
+
+  <!-- ========== FOOTER (shared) ========== -->
+  <footer class="footer py-5" id="contact">
+    <div class="container">
+      <div class="row g-4">
+        <div class="col-lg-4">
+          <div class="footer-brand mb-3">
+            <i class="bi bi-house-heart-fill me-2"></i>
+            <span class="brand-text">NestFinder</span><span class="brand-gold">AI</span>
+          </div>
+          <p class="footer-desc">Pakistan's first AI-powered real estate intelligence platform.</p>
+          <div class="social-links">
+            <a href="#" aria-label="Facebook"><i class="bi bi-facebook"></i></a>
+            <a href="#" aria-label="Twitter"><i class="bi bi-twitter-x"></i></a>
+            <a href="#" aria-label="Instagram"><i class="bi bi-instagram"></i></a>
+            <a href="#" aria-label="LinkedIn"><i class="bi bi-linkedin"></i></a>
+          </div>
+        </div>
+        <div class="col-lg-2 col-md-4">
+          <h3>Navigation</h3>
+          <ul class="footer-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="area-insight.html">Area Insights</a></li>
+            <li><a href="ai-recommendations.html">AI Picks</a></li>
+            <li><a href="property.html">Properties</a></li>
+            <li><a href="feedback.html">Feedback</a></li>
+          </ul>
+        </div>
+        <div class="col-lg-3 col-md-4">
+          <h3>Services</h3>
+          <ul class="footer-links">
+            <li><a href="ai-recommendations.html">AI Property Match</a></li>
+            <li><a href="area-insight.html">Area Intelligence</a></li>
+            <li><a href="property.html">Browse Listings</a></li>
+            <li><a href="connect.html">Schedule Visit</a></li>
+          </ul>
+        </div>
+        <div class="col-lg-3 col-md-4">
+          <h3>Contact</h3>
+          <ul class="footer-contact">
+            <li><i class="bi bi-geo-alt me-2"></i>Karachi, Pakistan</li>
+            <li><i class="bi bi-envelope me-2"></i>hello@nestfinder.ai</li>
+            <li><i class="bi bi-telephone me-2"></i>+92 300 1234567</li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom mt-4 pt-4 text-center">
+        <p class="copyright mb-0">&copy; 2026 NestFinder AI. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <button class="btn btn-primary back-to-top" id="backToTop" aria-label="Back to top">
+    <i class="bi bi-arrow-up"></i>
+  </button>
+
+  <!-- ========== AUTH MODAL ========== -->
+  <div class="modal fade" id="authModal" tabindex="-1" aria-labelledby="authModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content" style="background:#111;border:1px solid rgba(245,158,11,0.2);border-radius:1.5rem;color:#fff;">
+        <div class="modal-header" style="border-bottom:1px solid rgba(255,255,255,0.1);">
+          <h5 class="modal-title" id="authModalLabel"><i class="bi bi-shield-lock text-warning me-2"></i>NestFinder AI Account</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="d-flex gap-2 mb-3" style="border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:0.5rem;">
+            <button id="modalTabLogin" class="btn btn-sm px-3" style="background:rgba(245,158,11,0.1);color:#f59e0b;border:none;border-radius:0.5rem;font-weight:600;">Sign In</button>
+            <button id="modalTabRegister" class="btn btn-sm px-3" style="background:transparent;color:#9ca3af;border:none;border-radius:0.5rem;font-weight:600;">Sign Up</button>
+          </div>
+          <div id="authAlert" class="alert alert-danger d-none" style="background:rgba(220,38,38,0.1);border:1px solid rgba(220,38,38,0.3);color:#fca5a5;"></div>
+          <form id="loginForm">
+            <div class="mb-3">
+              <label class="form-label" style="color:#d1d5db;font-size:0.875rem;">Email Address</label>
+              <input type="email" id="loginEmail" class="form-control" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#fff;border-radius:0.75rem;" placeholder="name@example.com" required>
+            </div>
+            <div class="mb-4">
+              <label class="form-label" style="color:#d1d5db;font-size:0.875rem;">Password</label>
+              <input type="password" id="loginPassword" class="form-control" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#fff;border-radius:0.75rem;" placeholder="••••••••" required>
+            </div>
+            <button type="submit" class="btn w-100 py-2" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#000;font-weight:700;border:none;border-radius:0.75rem;"><i class="bi bi-box-arrow-in-right me-1"></i> Sign In</button>
+          </form>
+          <form id="registerForm" class="d-none">
+            <div class="mb-3">
+              <label class="form-label" style="color:#d1d5db;font-size:0.875rem;">Full Name</label>
+              <input type="text" id="regName" class="form-control" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#fff;border-radius:0.75rem;" placeholder="John Doe" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label" style="color:#d1d5db;font-size:0.875rem;">Email Address</label>
+              <input type="email" id="regEmail" class="form-control" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#fff;border-radius:0.75rem;" placeholder="john@example.com" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label" style="color:#d1d5db;font-size:0.875rem;">Password</label>
+              <input type="password" id="regPassword" class="form-control" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#fff;border-radius:0.75rem;" placeholder="Min 6 characters" minlength="6" required>
+            </div>
+            <div class="mb-4">
+              <label class="form-label" style="color:#d1d5db;font-size:0.875rem;">Confirm Password</label>
+              <input type="password" id="regPasswordConfirm" class="form-control" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#fff;border-radius:0.75rem;" placeholder="Repeat password" required>
+            </div>
+            <button type="submit" class="btn w-100 py-2" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#000;font-weight:700;border:none;border-radius:0.75rem;"><i class="bi bi-person-plus me-1"></i> Create Account</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/auth-shared.js"></script>
+  <script src="js/properties-shared.js"></script>
+  <script src="js/area-data.js"></script>
+  <script src="ai-chatbot.js"></script>
+  <script src="area-insight-app.js"></script>
+  <script>
+  (function() {
+    var currentUser = null;
+    var authBtn = document.getElementById('navSignInBtn');
+    var authText = document.getElementById('navAuthText');
+    var loginForm = document.getElementById('loginForm');
+    var registerForm = document.getElementById('registerForm');
+    var tabLogin = document.getElementById('modalTabLogin');
+    var tabRegister = document.getElementById('modalTabRegister');
+    var alertBox = document.getElementById('authAlert');
+    function showAuthAlert(msg) { if (alertBox) { alertBox.textContent = msg; alertBox.classList.remove('d-none'); } }
+    function hideAuthAlert() { if (alertBox) alertBox.classList.add('d-none'); }
+    function updateAuthUI(user) {
+      currentUser = user;
+      if (user) {
+        if (authText) authText.textContent = user.name;
+        if (authBtn) { authBtn.removeAttribute('data-bs-toggle'); authBtn.removeAttribute('data-bs-target'); }
+        if (authBtn) authBtn.onclick = function() { window.NestFinderAuth.logout(); };
+      } else {
+        if (authText) authText.textContent = 'Sign In';
+        if (authBtn) { authBtn.setAttribute('data-bs-toggle','modal'); authBtn.setAttribute('data-bs-target','#authModal'); }
+        if (authBtn) authBtn.onclick = null;
+      }
+    }
+    if (tabLogin && tabRegister) {
+      tabLogin.addEventListener('click', function() {
+        tabLogin.style.background = 'rgba(245,158,11,0.1)'; tabLogin.style.color = '#f59e0b';
+        tabRegister.style.background = 'transparent'; tabRegister.style.color = '#9ca3af';
+        loginForm.classList.remove('d-none'); registerForm.classList.add('d-none'); hideAuthAlert();
+      });
+      tabRegister.addEventListener('click', function() {
+        tabRegister.style.background = 'rgba(245,158,11,0.1)'; tabRegister.style.color = '#f59e0b';
+        tabLogin.style.background = 'transparent'; tabLogin.style.color = '#9ca3af';
+        registerForm.classList.remove('d-none'); loginForm.classList.add('d-none'); hideAuthAlert();
+      });
+    }
+    if (loginForm) {
+      loginForm.addEventListener('submit', async function(e) {
+        e.preventDefault(); hideAuthAlert();
+        var email = document.getElementById('loginEmail').value;
+        var pass = document.getElementById('loginPassword').value;
+        var btn = loginForm.querySelector('button[type="submit"]');
+        var orig = btn.innerHTML; btn.disabled = true; btn.innerHTML = '<i class="bi bi-arrow-repeat spin me-1"></i> Signing in...';
+        try {
+          var user = await window.NestFinderAuth.login(email, pass);
+          var modal = bootstrap.Modal.getInstance(document.getElementById('authModal'));
+          if (modal) modal.hide();
+          updateAuthUI(user); loginForm.reset();
+        } catch (err) { showAuthAlert(err.message); }
+        finally { btn.disabled = false; btn.innerHTML = orig; }
+      });
+    }
+    if (registerForm) {
+      registerForm.addEventListener('submit', async function(e) {
+        e.preventDefault(); hideAuthAlert();
+        var name = document.getElementById('regName').value;
+        var email = document.getElementById('regEmail').value;
+        var pass = document.getElementById('regPassword').value;
+        var confirm = document.getElementById('regPasswordConfirm').value;
+        if (pass !== confirm) { showAuthAlert('Passwords do not match!'); return; }
+        var btn = registerForm.querySelector('button[type="submit"]');
+        var orig = btn.innerHTML; btn.disabled = true; btn.innerHTML = '<i class="bi bi-arrow-repeat spin me-1"></i> Creating account...';
+        try {
+          var user = await window.NestFinderAuth.register(name, email, pass);
+          var modal = bootstrap.Modal.getInstance(document.getElementById('authModal'));
+          if (modal) modal.hide();
+          updateAuthUI(user); registerForm.reset();
+        } catch (err) { showAuthAlert(err.message); }
+        finally { btn.disabled = false; btn.innerHTML = orig; }
+      });
+    }
+    if (window.NestFinderAuth) {
+      window.NestFinderAuth.onChange(function(user) { updateAuthUI(user); });
+    }
+  })();
+  </script>
+<script src="js/navbar.js"></script>
+</body>
+</html>

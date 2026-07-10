@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="NestFinder AI Recommendations – AI-powered property matching, area intelligence scoring, market insights, and investment analysis for Pakistan real estate. All data sourced from Firebase.">
+  <meta name="keywords" content="NestFinder AI, real estate AI, area insight, property recommendations, Pakistan real estate analytics">
+  <title>AI Recommendations – NestFinder AI</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="ai-recommendations.css"> 
+</head>
+<body>
+
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <!-- ========== NAVBAR ========== -->
+  <div id="navbar-root"></div>
+
+  <!-- ========== HERO BANNER ========== -->
+  <header class="ai-hero" id="main-content">
+    <div class="ai-hero-bg"></div>
+    <div class="ai-hero-particles" aria-hidden="true" id="particles"></div>
+    <div class="container position-relative z-2">
+      <div class="row justify-content-center text-center">
+        <div class="col-lg-9">
+          <div class="ai-badge-pill mb-4">
+            <i class="bi bi-cpu-fill me-2"></i>Powered by NestFinder Intelligence Engine
+          </div>
+          <h1 class="ai-hero-title">Your Personalised<br><span class="text-gradient">AI Property Intelligence</span></h1>
+          <p class="ai-hero-sub">Real-time area scoring, investment analysis, and personalized recommendations — powered by your Firebase listings.</p>
+
+          <!-- Preference Wizard -->
+          <div class="pref-wizard mt-4" id="prefWizard">
+            <div class="row g-2 justify-content-center">
+              <div class="col-auto">
+                <select class="form-select rounded-pill pref-select" id="prefPurpose" aria-label="Purpose">
+                  <option value="buy">Buy</option>
+                  <option value="rent">Rent</option>
+                </select>
+              </div>
+              <div class="col-auto">
+                <select class="form-select rounded-pill pref-select" id="prefLifestyle" aria-label="Lifestyle">
+                  <option value="family">Family</option>
+                  <option value="investment">Investment</option>
+                  <option value="premium">Premium</option>
+                  <option value="student">Student</option>
+                </select>
+              </div>
+              <div class="col-auto">
+                <select class="form-select rounded-pill pref-select" id="prefBudget" aria-label="Budget">
+                  <option value="budget">Budget</option>
+                  <option value="mid">Mid-Range</option>
+                  <option value="premium">Premium</option>
+                </select>
+              </div>
+              <div class="col-auto">
+                <button class="btn btn-primary rounded-pill px-4 fw-semibold" id="runAiBtn">
+                  <i class="bi bi-magic me-2"></i>Run AI Analysis
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ========== QUICK STATS BAR ========== -->
+  <div class="stats-ribbon" id="statsRibbon">
+    <div class="container">
+      <div class="row g-0 text-center">
+        <div class="col-6 col-md-3 stat-ribbon-item" id="statPriceIndex">
+          <span class="stat-val">—</span>
+          <span class="stat-lbl">National Price Index</span>
+          <span class="stat-chg positive">—</span>
+        </div>
+        <div class="col-6 col-md-3 stat-ribbon-item" id="statYield">
+          <span class="stat-val">—</span>
+          <span class="stat-lbl">Avg Rental Yield</span>
+          <span class="stat-chg positive">—</span>
+        </div>
+        <div class="col-6 col-md-3 stat-ribbon-item" id="statDays">
+          <span class="stat-val">—</span>
+          <span class="stat-lbl">Avg Days on Market</span>
+          <span class="stat-chg positive">—</span>
+        </div>
+        <div class="col-6 col-md-3 stat-ribbon-item" id="statDemand">
+          <span class="stat-val">—</span>
+          <span class="stat-lbl">Demand Index</span>
+          <span class="stat-chg positive">—</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== MAIN CONTENT ========== -->
+  <main class="ai-main py-5">
+    <div class="container-xxl px-3 px-md-4">
+
+      <!-- AI Loading Overlay -->
+      <div class="ai-loading-overlay d-none" id="aiLoadingOverlay">
+        <div class="ai-loader-inner">
+          <div class="ai-orb-pulse"></div>
+          <p class="mt-3 fw-semibold text-white fs-5">Running AI Analysis...</p>
+          <p class="text-white opacity-75 small" id="aiLoadingMsg">Loading your property database</p>
+        </div>
+      </div>
+
+      <!-- ===== SECTION 1: TOP AI PICKS ===== -->
+      <section class="ai-section" id="topPicks">
+        <div class="section-hdr">
+          <div>
+            <div class="section-tag"><i class="bi bi-trophy-fill me-1"></i>AI Top Picks</div>
+            <h2 class="section-title">Curated Just For You</h2>
+            <p class="section-sub">Properties with highest AI match scores based on your preferences</p>
+          </div>
+          <div class="d-flex gap-2 flex-wrap">
+            <button class="filter-pill active" data-filter="all">All</button>
+            <button class="filter-pill" data-filter="buy">Buy</button>
+            <button class="filter-pill" data-filter="rent">Rent</button>
+          </div>
+        </div>
+        <div class="row g-4" id="topPicksGrid">
+          <!-- JS Injected -->
+        </div>
+      </section>
+
+      <!-- ===== SECTION 2: MARKET INSIGHTS DASHBOARD ===== -->
+      <section class="ai-section" id="marketInsights">
+        <div class="section-hdr">
+          <div>
+            <div class="section-tag"><i class="bi bi-bar-chart-line-fill me-1"></i>Market Intelligence</div>
+            <h2 class="section-title">Live Market Insights</h2>
+            <p class="section-sub">Analytics calculated from your Firebase property listings</p>
+          </div>
+        </div>
+
+        <div class="row g-4">
+          <!-- Quarterly Report Card -->
+          <div class="col-lg-5">
+            <div class="insight-card quarterly-card h-100">
+              <div class="d-flex align-items-center gap-2 mb-3">
+                <div class="insight-icon"><i class="bi bi-file-earmark-bar-graph-fill"></i></div>
+                <h3 class="h5 fw-bold mb-0">Market Report</h3>
+                <span class="ms-auto badge bg-success rounded-pill" id="marketSentimentBadge">—</span>
+              </div>
+              <p class="text-secondary" id="quarterlyText" style="line-height: 1.7;"></p>
+              <div class="row g-3 mt-1">
+                <div class="col-6">
+                  <div class="mini-stat-card">
+                    <div class="mini-stat-val text-success" id="bestAreaGrowth">—</div>
+                    <div class="mini-stat-lbl">Best Area Growth</div>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div class="mini-stat-card">
+                    <div class="mini-stat-val text-primary" id="fiveYearIRR">—</div>
+                    <div class="mini-stat-lbl">5-Year IRR</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Hot Cities -->
+          <div class="col-lg-3">
+            <div class="insight-card h-100">
+              <div class="d-flex align-items-center gap-2 mb-3">
+                <div class="insight-icon hot"><i class="bi bi-fire"></i></div>
+                <h3 class="h5 fw-bold mb-0">Hot Zones</h3>
+              </div>
+              <div id="hotCitiesList" class="d-flex flex-column gap-2">
+                <!-- JS Injected -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Price Heatmap Legend Panel -->
+          <div class="col-lg-4">
+            <div class="insight-card h-100">
+              <div class="d-flex align-items-center gap-2 mb-3">
+                <div class="insight-icon map"><i class="bi bi-geo-alt-fill"></i></div>
+                <h3 class="h5 fw-bold mb-0">Price Heatmap Zones</h3>
+              </div>
+              <div id="heatmapZones" class="d-flex flex-column gap-2">
+                <!-- JS Injected -->
+              </div>
+              <div class="heatmap-legend mt-3 d-flex gap-2 justify-content-start align-items-center flex-wrap">
+                <span class="hm-dot bg-danger"></span><small>High (>7Cr+)</small>
+                <span class="hm-dot bg-warning"></span><small>Mid (2–7Cr)</small>
+                <span class="hm-dot bg-success"></span><small>Low (&lt;2Cr)</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== SECTION 3: TRENDING AREAS ===== -->
+      <section class="ai-section" id="trendingAreas">
+        <div class="section-hdr">
+          <div>
+            <div class="section-tag"><i class="bi bi-lightning-charge-fill me-1"></i>Trending Now</div>
+            <h2 class="section-title">Fastest Growing Areas</h2>
+            <p class="section-sub">Areas showing maximum price momentum based on your listing history</p>
+          </div>
+        </div>
+        <div class="row g-4" id="trendingGrid">
+          <!-- JS Injected -->
+        </div>
+      </section>
+
+      <!-- ===== SECTION 4: AI AREA COMPARISON ===== -->
+      <section class="ai-section" id="areaComparison">
+        <div class="section-hdr">
+          <div>
+            <div class="section-tag"><i class="bi bi-arrow-left-right me-1"></i>AI Comparison Engine</div>
+            <h2 class="section-title">Compare Two Locations</h2>
+            <p class="section-sub">Factor-by-factor analysis with a weighted winner decision</p>
+          </div>
+        </div>
+        <div class="compare-panel">
+          <div class="row g-3 align-items-center mb-4">
+            <div class="col-md-4">
+              <label class="form-label fw-semibold small">Area A</label>
+              <select class="form-select rounded-3" id="compareA">
+                <!-- JS Injected -->
+              </select>
+            </div>
+            <div class="col-md-1 text-center d-none d-md-block">
+              <span class="vs-badge">VS</span>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold small">Area B</label>
+              <select class="form-select rounded-3" id="compareB">
+                <!-- JS Injected -->
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-semibold small">&nbsp;</label>
+              <button class="btn btn-primary w-100 rounded-3 fw-semibold" id="runCompareBtn">
+                <i class="bi bi-magic me-1"></i> Compare Now
+              </button>
+            </div>
+          </div>
+          <div id="compareResult" class="d-none">
+            <!-- JS Injected -->
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== SECTION 5: INVESTMENT OPPORTUNITIES ===== -->
+      <section class="ai-section" id="investmentOpps">
+        <div class="section-hdr">
+          <div>
+            <div class="section-tag"><i class="bi bi-graph-up-arrow me-1"></i>Investment Intelligence</div>
+            <h2 class="section-title">Top Investment Opportunities</h2>
+            <p class="section-sub">Ranked by projected return, growth rate, and risk-adjusted yield from your data</p>
+          </div>
+        </div>
+        <div class="row g-4" id="investmentGrid">
+          <!-- JS Injected -->
+        </div>
+      </section>
+
+      <!-- ===== SECTION 6: PERSONALIZED AI MATCHES ===== -->
+      <section class="ai-section" id="personalizedMatches">
+        <div class="section-hdr">
+          <div>
+            <div class="section-tag"><i class="bi bi-person-fill-gear me-1"></i>Personalized Matches</div>
+            <h2 class="section-title">Your AI Area Matches</h2>
+            <p class="section-sub">Ranked by confidence score based on your stated preferences</p>
+          </div>
+        </div>
+        <div class="row g-4" id="matchGrid">
+          <!-- JS Injected -->
+        </div>
+      </section>
+
+      <!-- ===== SECTION 7: AI TIPS ===== -->
+      <section class="ai-section" id="aiTips">
+        <div class="section-hdr">
+          <div>
+            <div class="section-tag"><i class="bi bi-lightbulb-fill me-1"></i>Personalized AI Tips</div>
+            <h2 class="section-title">Smart Recommendations For You</h2>
+            <p class="section-sub">Insights tailored to your profile and market conditions</p>
+          </div>
+        </div>
+        <div class="row g-4" id="aiTipsGrid">
+          <!-- JS Injected -->
+        </div>
+        <!-- AI Explanation Banner -->
+        <div class="ai-explain-banner mt-4" id="aiExplainBanner">
+          <div class="d-flex align-items-start gap-3">
+            <div class="ai-explain-icon"><i class="bi bi-robot"></i></div>
+            <div>
+              <div class="fw-bold mb-1">How NestFinder AI Works</div>
+              <p class="mb-0 opacity-85 small">Our engine analyzes your Firebase property listings to compute real-time metrics — Safety, Affordability, Connectivity, and Growth Potential — weighted by your lifestyle profile. Each area receives a composite score out of 100. Comparison uses factor-level scoring to determine a winner with data-driven explanations. All data reflects live market conditions from your database.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="nf-footer py-5" id="contact">
+    <div class="container">
+      <div class="row g-4">
+        <div class="col-lg-4">
+          <div class="footer-brand mb-3">
+            <i class="bi bi-house-heart-fill me-2"></i>
+            <span class="brand-text">NestFinder</span><span class="brand-gold">AI</span>
+          </div>
+          <p class="footer-desc">Pakistan's first AI-powered real estate intelligence platform.</p>
+          <div class="social-links">
+            <a href="#" aria-label="Facebook"><i class="bi bi-facebook"></i></a>
+            <a href="#" aria-label="Twitter"><i class="bi bi-twitter-x"></i></a>
+            <a href="#" aria-label="Instagram"><i class="bi bi-instagram"></i></a>
+            <a href="#" aria-label="LinkedIn"><i class="bi bi-linkedin"></i></a>
+          </div>
+        </div>
+        <div class="col-lg-2 col-md-4">
+          <h3>Navigation</h3>
+          <ul class="footer-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="area-insight.html">Area Insights</a></li>
+            <li><a href="ai-recommendations.html">AI Picks</a></li>
+            <li><a href="properties.html">Properties</a></li>
+            <li><a href="feedback.html">Feedback</a></li>
+          </ul>
+        </div>
+        <div class="col-lg-3 col-md-4">
+          <h3>Services</h3>
+          <ul class="footer-links">
+            <li><a href="ai-recommendations.html">AI Property Match</a></li>
+            <li><a href="area-insight.html">Area Intelligence</a></li>
+            <li><a href="properties.html">Browse Listings</a></li>
+            <li><a href="connect.html">Schedule Visit</a></li>
+          </ul>
+        </div>
+        <div class="col-lg-3 col-md-4">
+          <h3>Contact</h3>
+          <ul class="footer-contact">
+            <li><i class="bi bi-geo-alt me-2"></i>Karachi, Pakistan</li>
+            <li><i class="bi bi-envelope me-2"></i>hello@nestfinder.ai</li>
+            <li><i class="bi bi-telephone me-2"></i>+92 300 1234567</li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom mt-4 pt-4 text-center">
+        <p class="copyright mb-0">&copy; 2026 NestFinder AI. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <button class="btn btn-primary back-to-top" id="backToTop" aria-label="Back to top">
+    <i class="bi bi-arrow-up"></i>
+  </button>
+
+  <!-- Property Detail Modal -->
+  <div class="modal fade" id="propDetailModal" tabindex="-1" aria-labelledby="propDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold" id="propDetailModalLabel">Property Details</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-4" id="propDetailBody"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/auth-shared.js"></script>
+  <script src="js/properties-shared.js"></script>
+  <script src="area-insight.js"></script>
+  <script src="ai-recommendations-app.js"></script>
+  <script src="ai-chatbot.js"></script>
+<script src="js/navbar.js"></script>
+</body>
+</html>

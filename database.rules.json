@@ -1,0 +1,14 @@
+{
+  "rules": {
+    "properties": {
+      ".read": true,
+      ".write": "auth != null"
+    },
+    "reviews": {
+      ".read": true,
+      ".write": true
+    },
+    ".read": false,
+    ".write": false
+  }
+}

@@ -1,0 +1,2122 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Properties Catalog – NestFinder AI</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link rel="stylesheet" href="style.css">
+
+  <style>
+:root {
+  --color-primary-gradient: linear-gradient(135deg, #f59e0b, #d97706);
+  --color-primary-hover-gradient: linear-gradient(135deg, #fbbf24, #f59e0b);
+  --color-yellow: #f59e0b;
+  --color-yellow-light: #fcd34d;
+  --color-yellow-bg: rgba(245, 158, 11, 0.08);
+  --color-yellow-border: rgba(245, 158, 11, 0.3);
+  --color-dark-bg: #0d0d0d;
+  --color-light-bg: #f9f6ee;
+  --border-light: #e8d9a8;
+  --border-dark: rgba(245, 158, 11, 0.12);
+  --card-light-bg: #ffffff;
+  --card-dark-bg: #1a1a1a;
+  --text-light: #111111;
+  --text-dark: #f5f5f5;
+  --text-muted-light: #666666;
+  --text-muted-dark: #888888;
+}
+
+.properties-hero {
+  position: relative;
+  min-height: auto;
+  display: flex;
+  align-items: center;
+  padding: 130px 0 80px;
+  overflow: hidden;
+}
+
+.properties-hero-bg {
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, #000000 0%, #1a1200 40%, #0f0a00 70%, #0a0a0a 100%);
+  z-index: 0;
+}
+
+.properties-hero .container {
+  position: relative;
+  z-index: 2;
+}
+
+.properties-main {
+  background: var(--color-light-bg);
+  min-height: 80vh;
+  padding: 3rem 0;
+  transition: background-color 0.3s;
+}
+
+[data-bs-theme="dark"] .properties-main {
+  background: var(--color-dark-bg);
+}
+
+.hero-filter-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1.5px solid rgba(245, 158, 11, 0.25);
+  border-radius: 20px;
+  padding: 1.5rem;
+  backdrop-filter: blur(12px);
+  margin-top: 1.5rem;
+}
+
+.filter-title {
+  font-family: 'Outfit', 'Inter', sans-serif;
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: #fff !important;
+  margin-bottom: 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.text-yellow { color: var(--color-yellow) !important; }
+
+.filter-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.7);
+  margin-bottom: 0.4rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: block;
+}
+
+.filter-select, .filter-input {
+  background-color: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: #fff;
+  font-size: 0.9rem;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  transition: all 0.3s;
+  width: 100%;
+}
+
+.filter-select option {
+  background-color: #1a1a1a;
+  color: #fff;
+}
+
+.filter-select:focus, .filter-input:focus {
+  outline: none;
+  border-color: var(--color-yellow);
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
+  background-color: rgba(245, 158, 11, 0.15);
+  color: #fff;
+}
+
+.filter-input::placeholder {
+  color: rgba(255,255,255,0.55);
+}
+
+.btn-search {
+  background: var(--color-primary-gradient);
+  border: none;
+  color: #000000;
+  font-weight: 700;
+  padding: 0.6rem 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);
+  transition: all 0.3s;
+}
+
+.btn-search:hover {
+  background: var(--color-primary-hover-gradient);
+  box-shadow: 0 6px 16px rgba(245, 158, 11, 0.4);
+  transform: translateY(-1px);
+}
+
+.btn-reset-filter {
+  background: transparent;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  color: var(--color-yellow-light);
+  font-weight: 600;
+  padding: 0.6rem 1.5rem;
+  border-radius: 8px;
+  transition: all 0.3s;
+}
+
+.btn-reset-filter:hover {
+  background: rgba(245, 158, 11, 0.1);
+  border-color: var(--color-yellow);
+  color: var(--color-yellow);
+}
+
+.ai-badge-pill {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: var(--color-yellow-light);
+  padding: 0.4rem 1rem;
+  border-radius: 50px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.ai-hero-title {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.2;
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, #f59e0b, #fbbf24);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.ai-hero-sub {
+  color: rgba(255,255,255,0.75);
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.crud-action-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.mode-toggle-btn {
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.45rem 1rem;
+  border-radius: 50px;
+  border: 1.5px solid #d4b866;
+  background: transparent;
+  color: #7a6010;
+  transition: all 0.3s;
+  cursor: pointer;
+}
+
+[data-bs-theme="dark"] .mode-toggle-btn {
+  border-color: rgba(245, 158, 11, 0.3);
+  color: #aaa;
+}
+
+.mode-toggle-btn.active, .mode-toggle-btn:hover {
+  background: var(--color-primary-gradient);
+  border-color: var(--color-yellow);
+  color: #000;
+  box-shadow: 0 3px 12px rgba(245, 158, 11, 0.3);
+}
+
+.prop-grid-container {
+  position: relative;
+  min-height: 400px;
+}
+
+.ai-prop-card {
+  background: var(--card-light-bg);
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1.5px solid var(--border-light);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+[data-bs-theme="dark"] .ai-prop-card {
+  background: var(--card-dark-bg);
+  border-color: var(--border-dark);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+
+.ai-prop-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 30px rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.4);
+}
+
+.ai-card-img-wrap {
+  position: relative;
+  overflow: hidden;
+  height: 220px;
+}
+
+.prop-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+.ai-prop-card:hover .prop-card-img {
+  transform: scale(1.08);
+}
+
+.prop-card-badges {
+  position: absolute;
+  top: 0.85rem;
+  left: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  z-index: 5;
+}
+
+.prop-badge {
+  display: inline-block;
+  padding: 0.25rem 0.7rem;
+  border-radius: 50px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.prop-badge.type {
+  background: rgba(245, 158, 11, 0.88);
+  color: #000;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.prop-badge.category {
+  background: rgba(0, 0, 0, 0.8);
+  color: var(--color-yellow-light);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.prop-badge.status-sold {
+  background: rgba(239, 68, 68, 0.9);
+  color: white;
+}
+
+.prop-badge.status-rented {
+  background: rgba(59, 130, 246, 0.9);
+  color: white;
+}
+
+.ai-card-body {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.ai-card-price {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 800;
+  font-size: 1.1rem;
+  color: var(--color-yellow);
+}
+
+.ai-card-title {
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--text-light);
+  margin-bottom: 0.4rem;
+  line-height: 1.3;
+}
+
+[data-bs-theme="dark"] .ai-card-title {
+  color: var(--text-dark);
+}
+
+.ai-card-loc {
+  font-size: 0.85rem;
+  color: var(--text-muted-light);
+  margin-bottom: 0.75rem;
+}
+
+[data-bs-theme="dark"] .ai-card-loc {
+  color: var(--text-muted-dark);
+}
+
+.ai-card-specs {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.8rem;
+  color: var(--text-muted-light);
+  margin-bottom: 0.75rem;
+}
+
+[data-bs-theme="dark"] .ai-card-specs {
+  color: var(--text-muted-dark);
+}
+
+.ai-card-specs i {
+  margin-right: 0.3rem;
+  color: var(--color-yellow);
+}
+
+.tier-pill {
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+}
+
+.card-crud-overlay {
+  position: absolute;
+  top: 0.85rem;
+  right: 0.85rem;
+  display: flex;
+  gap: 0.35rem;
+  z-index: 10;
+  opacity: 0;
+  transform: translateY(-5px);
+  transition: all 0.3s ease;
+}
+
+.ai-prop-card:hover .card-crud-overlay,
+.ai-prop-card.manage-mode .card-crud-overlay {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.btn-crud-action {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.85);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  color: var(--color-yellow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+  backdrop-filter: blur(4px);
+}
+
+.btn-crud-action:hover {
+  background: var(--color-yellow);
+  color: #000;
+  border-color: var(--color-yellow);
+  transform: scale(1.1);
+}
+
+.btn-crud-action.delete:hover {
+  background: #ef4444;
+  color: #fff;
+  border-color: #ef4444;
+}
+
+.properties-loading-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.7);
+  z-index: 100;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 16px;
+  backdrop-filter: blur(2px);
+  transition: opacity 0.3s;
+}
+
+[data-bs-theme="dark"] .properties-loading-overlay {
+  background: rgba(13, 13, 13, 0.8);
+}
+
+.spinner-yellow {
+  color: var(--color-yellow);
+  width: 3rem;
+  height: 3rem;
+}
+
+.empty-state-box {
+  text-align: center;
+  padding: 5rem 2rem;
+  background: var(--card-light-bg);
+  border: 1.5px dashed var(--border-light);
+  border-radius: 16px;
+  margin-top: 1rem;
+}
+
+[data-bs-theme="dark"] .empty-state-box {
+  background: var(--card-dark-bg);
+  border-color: rgba(245, 158, 11, 0.2);
+}
+
+.empty-state-box i {
+  font-size: 3.5rem;
+  color: var(--color-yellow);
+  margin-bottom: 1.5rem;
+  display: block;
+}
+
+.empty-state-box h5 {
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: var(--text-light);
+  margin-bottom: 0.5rem;
+}
+
+[data-bs-theme="dark"] .empty-state-box h5 {
+  color: var(--text-dark);
+}
+
+.modal-content-yellow {
+  background-color: var(--card-light-bg);
+  color: var(--text-light);
+  border: 2px solid var(--border-light);
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+[data-bs-theme="dark"] .modal-content-yellow {
+  background-color: var(--card-dark-bg);
+  color: var(--text-dark);
+  border-color: rgba(245, 158, 11, 0.25);
+}
+
+.modal-content-yellow .modal-header {
+  border-bottom: 1px solid rgba(245, 158, 11, 0.15);
+  background: linear-gradient(135deg, #111, #1a1200);
+  color: #fff;
+}
+
+.modal-content-yellow .modal-header .btn-close {
+  filter: invert(1);
+}
+
+.modal-content-yellow .modal-body {
+  padding: 2rem;
+}
+
+.modal-content-yellow .modal-footer {
+  border-top: 1px solid rgba(245, 158, 11, 0.15);
+}
+
+.modal-gallery-wrap {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  margin-bottom: 1.5rem;
+  aspect-ratio: 16/10;
+  background: #111;
+}
+
+.modal-gallery-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.spec-box {
+  background: var(--color-yellow-bg);
+  border: 1px solid var(--color-yellow-border);
+  border-radius: 8px;
+  padding: 0.75rem;
+  text-align: center;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.spec-box i {
+  color: var(--color-yellow);
+  font-size: 1.25rem;
+  margin-bottom: 0.35rem;
+}
+
+.spec-box-val {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--text-light);
+}
+
+[data-bs-theme="dark"] .spec-box-val {
+  color: var(--text-dark);
+}
+
+.spec-box-lbl {
+  font-size: 0.7rem;
+  color: var(--text-muted-light);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+[data-bs-theme="dark"] .spec-box-lbl {
+  color: var(--text-muted-dark);
+}
+
+.feature-badge {
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--color-yellow);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  font-weight: 600;
+  font-size: 0.78rem;
+  padding: 0.4rem 0.85rem;
+  border-radius: 50px;
+}
+
+[data-bs-theme="dark"] .feature-badge {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.35);
+}
+
+.agent-card {
+  background: rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  padding: 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+[data-bs-theme="dark"] .agent-card {
+  background: rgba(255, 255, 255, 0.02);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+.agent-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: var(--color-primary-gradient);
+  color: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.2rem;
+  box-shadow: 0 4px 10px rgba(245, 158, 11, 0.2);
+}
+
+.agent-name {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--text-light);
+  margin-bottom: 0.15rem;
+}
+
+[data-bs-theme="dark"] .agent-name {
+  color: var(--text-dark);
+}
+
+.agent-role {
+  font-size: 0.72rem;
+  color: var(--text-muted-light);
+}
+
+[data-bs-theme="dark"] .agent-role {
+  color: var(--text-muted-dark);
+}
+
+.seller-rating-wrap .star-display {
+  letter-spacing: 2px;
+}
+.rate-star:hover {
+  transform: scale(1.15);
+}
+.rate-star {
+  display: inline-block;
+  transition: transform .15s, color .15s;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-card {
+  animation: fadeInUp 0.5s ease-out both;
+}
+
+.crud-form .form-label {
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted-light);
+}
+
+[data-bs-theme="dark"] .crud-form .form-label {
+  color: var(--text-muted-dark);
+}
+
+.crud-form .form-control, .crud-form .form-select {
+  border: 1px solid var(--border-light);
+  padding: 0.6rem 0.85rem;
+  border-radius: 8px;
+  background-color: var(--card-light-bg);
+  color: var(--text-light);
+}
+
+[data-bs-theme="dark"] .crud-form .form-control,
+[data-bs-theme="dark"] .crud-form .form-select {
+  border-color: rgba(245, 158, 11, 0.25);
+  background-color: rgba(255, 255, 255, 0.03);
+  color: var(--text-dark);
+}
+
+.crud-form .form-control:focus, .crud-form .form-select:focus {
+  outline: none;
+  border-color: var(--color-yellow);
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+}
+
+.navbar-brand .brand-text {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 800;
+}
+
+.nf-btn-primary {
+  background: var(--color-primary-gradient);
+  border: none;
+  color: #000;
+  font-weight: 700;
+  padding: 0.5rem 1.25rem;
+  border-radius: 12px;
+  transition: all 0.3s;
+}
+
+.nf-btn-primary:hover {
+  background: var(--color-primary-hover-gradient);
+  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.35);
+  transform: translateY(-1px);
+}
+
+#mainNav {
+  background: #000000;
+  transition: all 0.3s;
+  padding: 1rem 0;
+}
+
+[data-bs-theme="dark"] #mainNav {
+  background: #020617;
+}
+
+#mainNav.scrolled {
+  background: #000000;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 2px 20px rgba(0,0,0,0.3);
+}
+
+[data-bs-theme="dark"] #mainNav.scrolled {
+  background: #020617;
+}
+
+#mainNav .nav-link {
+  color: rgba(255,255,255,0.85);
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  transition: color 0.3s;
+}
+
+#mainNav .nav-link:hover,
+#mainNav .nav-link.active {
+  color: var(--color-yellow);
+}
+
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: var(--color-yellow);
+  color: #000;
+  padding: 8px;
+  z-index: 100;
+  transition: top 0.3s;
+}
+.skip-link:focus { top: 0; }
+
+.back-to-top {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  background: var(--color-primary-gradient);
+  border: none;
+  color: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s;
+  z-index: 999;
+  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+}
+.back-to-top.visible {
+  opacity: 1;
+  visibility: visible;
+}
+.back-to-top:hover {
+  transform: translateY(-3px);
+}
+
+.nf-footer, .footer {
+  background: #000 !important;
+  color: rgba(255,255,255,0.75) !important;
+}
+[data-bs-theme="dark"] .nf-footer {
+  border: 1px solid rgba(245,158,11,0.12);
+}
+
+.footer-brand {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+}
+.footer-brand .text { color: var(--color-yellow); }
+.footer-desc { margin-bottom: 1.5rem; max-width: 300px; }
+.nf-footer h3, .footer h3 {
+  color: #fff !important;
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 1.2rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.nf-footer .footer-links, .nf-footer .footer-contact, .footer-links, .footer-contact { list-style: none; padding: 0; }
+.nf-footer .footer-links li, .nf-footer .footer-contact li, .footer-links li, .footer-contact li { margin-bottom: 0.6rem; }
+.nf-footer .footer-links a, .footer-links a {
+  color: rgba(255,255,255,0.6) !important;
+  text-decoration: none;
+  transition: color 0.3s;
+}
+.nf-footer .footer-links a:hover, .footer-links a:hover { color: #f59e0b !important; }
+.nf-footer .footer-contact i, .footer-contact i { color: #f59e0b !important; }
+.nf-footer .social-links, .social-links { display: flex; gap: 1rem; }
+.nf-footer .social-links a, .social-links a {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: rgba(245,158,11,0.1);
+  border: 1px solid rgba(245,158,11,0.2);
+  color: #f59e0b !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+}
+.nf-footer .social-links a:hover, .social-links a:hover {
+  background: #f59e0b !important;
+  color: #000 !important;
+}
+.nf-footer .footer-bottom, .footer-bottom {
+  border-top: 1px solid rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.4) !important;
+}
+.nf-footer .footer-brand, .footer-brand {
+  color: #fff !important;
+}
+.nf-footer .footer-desc, .footer-desc {
+  color: rgba(255,255,255,0.7) !important;
+}
+
+.theme-toggle {
+  border-color: rgba(245,158,11,0.4) !important;
+  color: var(--color-yellow) !important;
+  border-radius: 50% !important;
+  width: 36px !important;
+  height: 36px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+}
+.theme-toggle:hover {
+  background: rgba(245,158,11,0.1) !important;
+}
+
+.ai-hero-particles {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background-image: 
+    radial-gradient(circle at 20% 50%, rgba(245,158,11,0.08) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(245,158,11,0.05) 0%, transparent 40%);
+}
+
+.results-count {
+  font-size: 0.9rem;
+  color: var(--text-muted-light);
+  margin-bottom: 1rem;
+}
+[data-bs-theme="dark"] .results-count {
+  color: var(--text-muted-dark);
+}
+  </style>
+<!-- <base target="_blank"> -->
+</head>
+<body>
+
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <div id="navbar-root"></div>
+
+  <header class="properties-hero" id="main-content" style="min-height: auto; padding-bottom: 80px;">
+    <div class="properties-hero-bg"></div>
+    <div class="ai-hero-particles" aria-hidden="true"></div>
+    <div class="container position-relative z-2">
+      <div class="row justify-content-center text-center">
+        <div class="col-lg-11 text-center">
+          <div class="ai-badge-pill mb-3">
+            <i class="bi bi-search me-2"></i>Real-Time Property Intelligence Database
+          </div>
+          <h1 class="ai-hero-title" style="font-size: clamp(2rem, 4vw, 3rem); margin-bottom: 0.5rem;">Find Your Perfect <br><span class="text-gradient">Nest in Pakistan</span></h1>
+          <p class="ai-hero-sub" style="margin-bottom: 2rem; font-size: 0.95rem;">Search across Karachi, Lahore, and Islamabad. Filter by budget, bedrooms, type, and categories instantly.</p>
+
+          <div class="filter-title" style="margin-bottom:0.75rem;">
+            <i class="bi bi-filter-square-fill text-yellow"></i> Filter Property Catalog
+          </div>
+          <div class="hero-filter-card">
+            <div class="row g-3">
+              <div class="col-lg-4 col-md-6 col-sm-12">
+                <label for="filterCity" class="filter-label">City / Location</label>
+                <select id="filterCity" class="form-select filter-select">
+                  <option value="all">All Cities</option>
+                  <option value="Karachi">Karachi</option>
+                  <option value="Lahore">Lahore</option>
+                  <option value="Islamabad">Islamabad</option>
+                </select>
+              </div>
+              <div class="col-lg-2 col-md-3 col-sm-6 col-6">
+                <label for="filterType" class="filter-label">Property Type</label>
+                <select id="filterType" class="form-select filter-select">
+                  <option value="all">All Types</option>
+                  <option value="House">House</option>
+                  <option value="Apartment">Apartment</option>
+                  <option value="Villa">Villa</option>
+                  <option value="Plot">Plot</option>
+                  <option value="Commercial">Commercial</option>
+                  <option value="Penthouse">Penthouse</option>
+                  <option value="Office">Office</option>
+                  <option value="Shop">Shop</option>
+                </select>
+              </div>
+              <div class="col-lg-2 col-md-3 col-sm-6 col-6">
+                <label for="filterBedrooms" class="filter-label">Bedrooms</label>
+                <select id="filterBedrooms" class="form-select filter-select">
+                  <option value="all">Any Beds</option>
+                  <option value="1">1 Bed</option>
+                  <option value="2">2 Beds</option>
+                  <option value="3">3 Beds</option>
+                  <option value="4">4 Beds</option>
+                  <option value="5">5 Beds</option>
+                  <option value="6">6 Beds</option>
+                  <option value="8">8 Beds</option>
+                  <option value="10+">10+ Beds</option>
+                </select>
+              </div>
+              <div class="col-lg-2 col-md-3 col-sm-6 col-6">
+                <label for="filterBathrooms" class="filter-label">Bathrooms</label>
+                <select id="filterBathrooms" class="form-select filter-select">
+                  <option value="all">Any Baths</option>
+                  <option value="1">1 Bath</option>
+                  <option value="2">2 Baths</option>
+                  <option value="3">3 Baths</option>
+                  <option value="4">4 Baths</option>
+                  <option value="5">5 Baths</option>
+                  <option value="6">6 Baths</option>
+                  <option value="8">8 Baths</option>
+                  <option value="10+">10+ Baths</option>
+                </select>
+              </div>
+              <div class="col-lg-2 col-md-3 col-sm-6 col-6">
+                <label for="filterCategory" class="filter-label">Category</label>
+                <select id="filterCategory" class="form-select filter-select">
+                  <option value="all">All Options</option>
+                  <option value="For Sale">For Sale</option>
+                  <option value="For Rent">For Rent</option>
+                </select>
+              </div>
+              <div class="col-lg-3 col-md-4 col-sm-6 col-6">
+                <label for="filterBudget" class="filter-label">Budget Category</label>
+                <select id="filterBudget" class="form-select filter-select">
+                  <option value="all">All Tiers</option>
+                  <option value="Budget">Budget</option>
+                  <option value="Premium">Premium</option>
+                  <option value="Luxury">Luxury</option>
+                </select>
+              </div>
+              <div class="col-lg-3 col-md-4 col-sm-6 col-6">
+                <label for="filterMinPrice" class="filter-label">Min Price (PKR)</label>
+                <input type="number" id="filterMinPrice" class="form-control filter-input" placeholder="Min price (varies by tier)">
+              </div>
+              <div class="col-lg-3 col-md-4 col-sm-6 col-6">
+                <label for="filterMaxPrice" class="filter-label">Max Price (PKR)</label>
+                <input type="number" id="filterMaxPrice" class="form-control filter-input" placeholder="Max price (varies by tier)">
+              </div>
+              <div class="col-lg-3 col-md-12 col-sm-12 d-flex gap-2 align-items-end justify-content-end">
+                <button id="resetFiltersBtn" class="btn btn-reset-filter flex-grow-1">
+                  <i class="bi bi-x-circle me-1"></i> Reset
+                </button>
+                <button id="applyFiltersBtn" class="btn btn-search flex-grow-1">
+                  <i class="bi bi-search me-1"></i> Apply
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="properties-main">
+    <div class="container-xxl px-3 px-md-4">
+      <div class="crud-action-bar">
+        <div class="d-flex gap-2">
+          <button id="btnViewMode" class="mode-toggle-btn active">
+            <i class="bi bi-grid-fill me-1"></i> View Listings
+          </button>
+          <button id="btnManageMode" class="mode-toggle-btn">
+            <i class="bi bi-sliders2-vertical me-1"></i> Manage Listings
+          </button>
+        </div>
+        <div class="d-flex gap-2">
+          <a href="acc.html"><button id="btnAddProperty" class="btn btn-warning fw-bold d-none text-dark" style="border-radius: 50px;">
+            <i class="bi bi-plus-circle-fill me-1"></i> Add Property
+          </button></a> 
+        </div>
+      </div>
+
+      <div id="resultsCount" class="results-count"></div>
+
+      <div class="prop-grid-container">
+        <div id="propertiesLoading" class="properties-loading-overlay d-none">
+          <div class="spinner-border spinner-yellow" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+        </div>
+        <div id="emptyState" class="col-12 empty-state-box d-none">
+          <i class="bi bi-search-heart"></i>
+          <h5>No Properties Match Your Filters</h5>
+          <p class="text-muted small">Try refining your keyword query, widening the price boundaries, or resetting filters.</p>
+          <button class="btn btn-warning text-dark fw-bold mt-2" onclick="document.getElementById('resetFiltersBtn').click()" style="border-radius: 8px;">
+            Clear All Filters
+          </button>
+        </div>
+        <div id="propertiesGrid" class="row g-4"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ===== FOOTER ===== -->
+<footer class="nf-footer py-5" id="contact">
+  <div class="container">
+    <div class="row g-4">
+      <div class="col-lg-4">
+        <div class="footer-brand mb-3">
+          <i class="bi bi-house-heart-fill me-2"></i>
+          <span class="brand-text">NestFinder</span><span class="brand-gold">AI</span>
+        </div>
+        <p class="footer-desc">Pakistan's first AI-powered real estate intelligence platform.</p>
+        <div class="social-links">
+          <a href="#" aria-label="Facebook"><i class="bi bi-facebook"></i></a>
+          <a href="#" aria-label="Twitter"><i class="bi bi-twitter-x"></i></a>
+          <a href="#" aria-label="Instagram"><i class="bi bi-instagram"></i></a>
+          <a href="#" aria-label="LinkedIn"><i class="bi bi-linkedin"></i></a>
+        </div>
+      </div>
+      <div class="col-lg-2 col-md-4">
+        <h3>Navigation</h3>
+        <ul class="footer-links">
+          <li><a href="index.html">Home</a></li>
+          <li><a href="area-insight.html">Area Insights</a></li>
+          <li><a href="ai-recommendations.html">AI Picks</a></li>
+          <li><a href="properties.html">Properties</a></li>
+          <li><a href="feedback.html">Feedback</a></li>
+        </ul>
+      </div>
+      <div class="col-lg-3 col-md-4">
+        <h3>Services</h3>
+        <ul class="footer-links">
+          <li><a href="ai-recommendations.html">AI Property Match</a></li>
+          <li><a href="area-insight.html">Area Intelligence</a></li>
+          <li><a href="properties.html">Browse Listings</a></li>
+          <li><a href="connect.html">Schedule Visit</a></li>
+        </ul>
+      </div>
+      <div class="col-lg-3 col-md-4">
+        <h3>Contact</h3>
+        <ul class="footer-contact">
+          <li><i class="bi bi-geo-alt me-2"></i>Karachi, Pakistan</li>
+          <li><i class="bi bi-envelope me-2"></i>hello@nestfinder.ai</li>
+          <li><i class="bi bi-telephone me-2"></i>+92 300 1234567</li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom mt-4 pt-4 text-center">
+      <p class="copyright mb-0">&copy; 2026 NestFinder AI. All rights reserved.</p>
+    </div>
+  </div>
+</footer>
+
+<button class="btn btn-primary back-to-top" id="backToTop" aria-label="Back to top">
+  <i class="bi bi-arrow-up"></i>
+</button>
+
+  <div class="modal fade" id="propDetailModal" tabindex="-1" aria-labelledby="propDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+      <div class="modal-content modal-content-yellow">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold" id="propDetailModalLabel">Property Details</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" id="propDetailBody"></div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-warning fw-bold py-2 px-4" data-bs-dismiss="modal" style="border-radius: 8px;">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Seller Rating Modal -->
+  <div class="modal fade" id="sellerRatingModal" tabindex="-1" aria-labelledby="sellerRatingModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+      <div class="modal-content modal-content-yellow">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold" id="sellerRatingModalLabel"><i class="bi bi-star-fill text-yellow me-2"></i>Rate this Seller</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body text-center py-4">
+          <div style="font-size:2.5rem;line-height:1;margin-bottom:0.75rem;" id="rateStars">
+            <i class="bi bi-star rate-star" data-val="1" style="cursor:pointer;color:#555;transition:color .15s;"></i>
+            <i class="bi bi-star rate-star" data-val="2" style="cursor:pointer;color:#555;transition:color .15s;"></i>
+            <i class="bi bi-star rate-star" data-val="3" style="cursor:pointer;color:#555;transition:color .15s;"></i>
+            <i class="bi bi-star rate-star" data-val="4" style="cursor:pointer;color:#555;transition:color .15s;"></i>
+            <i class="bi bi-star rate-star" data-val="5" style="cursor:pointer;color:#555;transition:color .15s;"></i>
+          </div>
+          <div style="color:#9ca3af;font-size:0.85rem;" id="rateLabel">Click a star to rate</div>
+        </div>
+        <div class="modal-footer justify-content-center border-0 pt-0">
+          <button type="button" class="btn btn-warning fw-bold px-5" id="btnSubmitRating" disabled style="border-radius:8px;">Submit Rating</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="crudPropertyModal" tabindex="-1" aria-labelledby="crudPropertyModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md modal-dialog-centered">
+      <div class="modal-content modal-content-yellow">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold" id="crudPropertyModalLabel">Add Property Listing</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="crudPropertyForm" class="crud-form">
+          <div class="modal-body p-4">
+            <div class="row g-3">
+              <div class="col-12">
+                <label for="propTitle" class="form-label">Property Title</label>
+                <input type="text" id="propTitle" class="form-control" placeholder="e.g. 3 Bed Apartment DHA Phase 6" required>
+              </div>
+              <div class="col-sm-6">
+                <label for="propType" class="form-label">Property Type</label>
+                <select id="propType" class="form-select filter-select w-100" required>
+                  <option value="House">House</option>
+                  <option value="Apartment">Apartment</option>
+                  <option value="Villa">Villa</option>
+                  <option value="Plot">Plot</option>
+                  <option value="Commercial">Commercial</option>
+                  <option value="Penthouse">Penthouse</option>
+                  <option value="Office">Office</option>
+                  <option value="Shop">Shop</option>
+                </select>
+              </div>
+              <div class="col-sm-6">
+                <label for="propCategory" class="form-label">Category</label>
+                <select id="propCategory" class="form-select filter-select w-100" required>
+                  <option value="For Sale">For Sale</option>
+                  <option value="For Rent">For Rent</option>
+                </select>
+              </div>
+              <div class="col-sm-6">
+                <label for="propBudgetCategory" class="form-label">Budget Tier</label>
+                <select id="propBudgetCategory" class="form-select filter-select w-100" required>
+                  <option value="Budget">Budget</option>
+                  <option value="Premium">Premium</option>
+                  <option value="Luxury">Luxury</option>
+                </select>
+              </div>
+              <div class="col-sm-6">
+                <label for="propPrice" class="form-label">Price (PKR)</label>
+                <input type="number" id="propPrice" class="form-control" placeholder="e.g. 4500000" required>
+              </div>
+              <div class="col-12">
+                <label for="propLocation" class="form-label">Location (Area, City)</label>
+                <input type="text" id="propLocation" class="form-control" placeholder="e.g. DHA Phase 6, Karachi" required>
+              </div>
+              <div class="col-sm-4 col-6">
+                <label for="propBedrooms" class="form-label">Bedrooms</label>
+                <input type="number" id="propBedrooms" class="form-control" min="0" max="100" placeholder="0 if N/A">
+              </div>
+              <div class="col-sm-4 col-6">
+                <label for="propBathrooms" class="form-label">Bathrooms</label>
+                <input type="number" id="propBathrooms" class="form-control" min="0" max="100" placeholder="0 if N/A">
+              </div>
+              <div class="col-sm-4 col-12">
+                <label for="propArea" class="form-label">Area / Size</label>
+                <input type="text" id="propArea" class="form-control" placeholder="e.g. 120 sq yards" required>
+              </div>
+              <div class="col-12">
+                <label for="propImage" class="form-label">Image Unsplash URL (Optional)</label>
+                <input type="url" id="propImage" class="form-control" placeholder="https://images.unsplash.com/...">
+              </div>
+              <div class="col-12">
+                <label for="propFeatures" class="form-label">Features (Comma separated)</label>
+                <input type="text" id="propFeatures" class="form-control" placeholder="Backup Generator, 24/7 Security, Gas Connection">
+              </div>
+              <div class="col-12">
+                <label for="propStatus" class="form-label">Status</label>
+                <select id="propStatus" class="form-select filter-select w-100">
+                  <option value="Active">Active</option>
+                  <option value="Sold">Sold</option>
+                  <option value="Rented">Rented</option>
+                </select>
+              </div>
+              <div class="col-12 border-top pt-3 mt-2">
+                <h6 class="fw-bold mb-2">Agent Information</h6>
+              </div>
+              <div class="col-sm-4 col-12">
+                <label for="propContactName" class="form-label">Agent Name</label>
+                <input type="text" id="propContactName" class="form-control" placeholder="Zubair Ahmed" required>
+              </div>
+              <div class="col-sm-4 col-6">
+                <label for="propContactPhone" class="form-label">Phone</label>
+                <input type="text" id="propContactPhone" class="form-control" placeholder="+92 300 1234567" required>
+              </div>
+              <div class="col-sm-4 col-6">
+                <label for="propContactEmail" class="form-label">Email</label>
+                <input type="email" id="propContactEmail" class="form-control" placeholder="agent@nestfinder.ai" required>
+              </div>
+              <div class="col-12">
+                <label for="propDescription" class="form-label">Description</label>
+                <textarea id="propDescription" class="form-control" rows="3" placeholder="Describe the property layout, accessibility..." required></textarea>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-warning text-dark fw-bold px-4">Save Listing</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+// ===================== NAVBAR SCROLL =====================
+document.addEventListener("DOMContentLoaded", () => {
+  const btn = document.getElementById("backToTop");
+  if (btn) {
+    window.addEventListener("scroll", () => btn.classList.toggle("visible", window.scrollY > 400));
+    btn.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
+  }
+});
+  </script>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/auth-shared.js"></script>
+  <script src="js/properties-shared.js"></script>
+  <script src="js/reviews.js"></script>
+
+  <script>
+// ===================== APP CONTROLLER =====================
+document.addEventListener("DOMContentLoaded", async () => {
+  const API = window.NestFinderAPI;
+  if (!API) {
+    console.error("NestFinderAPI module not loaded.");
+    return;
+  }
+
+  let allProperties = [];
+  let sellerRatingCache = {};
+  let currentMode = "view";
+  let activeDetailsModal = null;
+  let activeCrudModal = null;
+  let editingPropertyId = null;
+
+  const $ = id => document.getElementById(id);
+
+  const gridContainer = $("propertiesGrid");
+  const loadingOverlay = $("propertiesLoading");
+  const emptyStateBox = $("emptyState");
+  const resultsCount = $("resultsCount");
+
+  const selectCity = $("filterCity");
+  const selectType = $("filterType");
+  const selectBedrooms = $("filterBedrooms");
+  const selectBathrooms = $("filterBathrooms");
+  const selectCategory = $("filterCategory");
+  const selectBudget = $("filterBudget");
+  const inputMinPrice = $("filterMinPrice");
+  const inputMaxPrice = $("filterMaxPrice");
+  const applyBtn = $("applyFiltersBtn");
+  const resetFiltersBtn = $("resetFiltersBtn");
+
+  const btnViewMode = $("btnViewMode");
+  const btnManageMode = $("btnManageMode");
+  const btnAddProperty = $("btnAddProperty");
+  const btnResetDb = $("btnResetDb");
+  const btnRemoveDummy = $("btnRemoveDummy");
+
+  const crudModalEl = $("crudPropertyModal");
+  const crudForm = $("crudPropertyForm");
+  const crudModalTitle = $("crudPropertyModalLabel");
+  const detailModalEl = $("propDetailModal");
+
+  function formatPrice(n, category) {
+    if (category === "For Rent" || category === "Rent") {
+      return n >= 100000 
+        ? "PKR " + (n / 100000).toFixed(1) + " Lakh/mo"
+        : "PKR " + n.toLocaleString() + "/mo";
+    } else {
+      return n >= 10000000
+        ? "PKR " + (n / 10000000).toFixed(2) + " Crore"
+        : "PKR " + (n / 100000).toFixed(1) + " Lakh";
+    }
+  }
+
+  async function loadSellerRatings() {
+    sellerRatingCache = {};
+    try {
+      var snap = await firebase.database().ref('sellerRatings').once('value');
+      var data = snap.val();
+      if (!data) return;
+      Object.keys(data).forEach(function(sellerId) {
+        var ratings = data[sellerId] && data[sellerId].ratings;
+        if (!ratings) return;
+        var vals = Object.values(ratings);
+        if (!vals.length) return;
+        var total = vals.reduce(function(s, r) { return s + (r.rating || 0); }, 0);
+        sellerRatingCache[sellerId] = { avg: total / vals.length, count: vals.length };
+      });
+    } catch(e) {}
+  }
+
+  var _firebaseListener = null;
+
+  function processNewData(data) {
+    allProperties = data
+      ? Object.keys(data).map(function(key) { return { firebaseKey: key, ...data[key] }; }).filter(function(p) { return p.status !== 'Disabled'; })
+      : [];
+    applyFilters();
+  }
+
+  async function loadData(showSpinner = true) {
+    if (showSpinner) loadingOverlay.classList.remove("d-none");
+    try {
+      // Detach old listener if any
+      if (_firebaseListener) {
+        propertiesDbRef.off('value', _firebaseListener);
+      }
+      _firebaseListener = function(snap) {
+        processNewData(snap.val());
+        if (showSpinner) {
+          setTimeout(function() { loadingOverlay.classList.add("d-none"); }, 300);
+        }
+      };
+      propertiesDbRef.on('value', _firebaseListener);
+      propertiesDbRef.on('child_changed', function() {
+        propertiesDbRef.once('value').then(function(snap) {
+          processNewData(snap.val());
+        });
+      });
+      window.addEventListener('focus', function() {
+        propertiesDbRef.once('value').then(function(snap) {
+          processNewData(snap.val());
+        });
+      });
+      await loadSellerRatings();
+    } catch (e) {
+      console.error("Failed to load properties:", e);
+      gridContainer.innerHTML = '<div class="col-12 text-center py-5 text-danger">Failed to load properties. Please try reloading the page.</div>';
+      if (showSpinner) loadingOverlay.classList.add("d-none");
+    }
+  }
+
+  function renderGrid(list) {
+    gridContainer.innerHTML = "";
+
+    if (list.length === 0) {
+      emptyStateBox.classList.remove("d-none");
+      resultsCount.textContent = "";
+      return;
+    }
+
+    emptyStateBox.classList.add("d-none");
+    resultsCount.textContent = `Showing ${list.length} of ${allProperties.length} properties`;
+
+    list.forEach((p, idx) => {
+      const cardCol = document.createElement("div");
+      cardCol.className = "col-lg-4 col-md-6 animate-card";
+      cardCol.style.animationDelay = `${(idx % 6) * 0.05}s`;
+
+      const statusBadge = p.status !== "Active" 
+        ? `<span class="prop-badge status-${p.status.toLowerCase()}">${p.status}</span>`
+        : "";
+
+      // Only first 2 properties show "New" tag
+      const newBadge = idx < 2 ? `<span class="prop-badge new-tag">New</span>` : "";
+
+      const crudOverlay = currentMode === "manage"
+        ? `<div class="card-crud-overlay">
+             <button class="btn-crud-action edit" onclick="window.editProperty(${p.id}, event)" title="Edit Property">
+               <i class="bi bi-pencil-square"></i>
+             </button>
+             <button class="btn-crud-action delete" onclick="window.deleteProperty(${p.id}, event)" title="Delete Property">
+               <i class="bi bi-trash-fill"></i>
+             </button>
+           </div>`
+        : "";
+
+      const bedSpec = p.bedrooms > 0 ? `<span><i class="bi bi-bed-fill"></i>${p.bedrooms} Bed</span>` : "";
+      const bathSpec = p.bathrooms > 0 ? `<span><i class="bi bi-water"></i>${p.bathrooms} Bath</span>` : "";
+      const areaSpec = p.area ? `<span><i class="bi bi-rulers"></i>${p.area}</span>` : "";
+
+      cardCol.innerHTML = `
+        <div class="ai-prop-card h-100 position-relative ${currentMode === 'manage' ? 'manage-mode' : ''}" onclick="window.openDetails(${p.id})">
+          <div class="ai-card-img-wrap">
+            <img src="${p.image}" alt="${p.title}" class="prop-card-img" onerror="this.src='https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80'">
+            <div class="prop-card-badges">
+              ${newBadge}
+              <span class="prop-badge type">${p.type}</span>
+              <span class="prop-badge category">${p.category}</span>
+              ${statusBadge}
+            </div>
+            ${crudOverlay}
+          </div>
+          <div class="ai-card-body">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <div class="ai-card-price">${formatPrice(p.price, p.category)}</div>
+              <span class="tier-pill badge rounded-pill" style="background: rgba(245,158,11,0.15); color: #f59e0b; border: 1px solid rgba(245,158,11,0.3)">${p.budgetCategory}</span>
+            </div>
+            <div class="ai-card-title">${p.title}</div>
+            <div class="ai-card-loc">
+              <i class="bi bi-geo-alt-fill text-yellow"></i> ${p.location}
+            </div>
+            <div class="ai-card-specs">
+              ${bedSpec}
+              ${bathSpec}
+              ${areaSpec}
+            </div>
+            <p class="text-secondary small mb-3 flex-grow-1" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.5;">
+              ${p.description}
+            </p>
+            <button class="btn btn-outline-warning btn-sm w-100 fw-bold mt-auto py-2">
+              <i class="bi bi-info-circle me-1"></i> View Details
+            </button>
+          </div>
+        </div>
+      `;
+      gridContainer.appendChild(cardCol);
+    });
+  }
+
+  function applyFilters() {
+    const city = selectCity.value;
+    const type = selectType.value;
+    const beds = selectBedrooms.value;
+    const baths = selectBathrooms.value;
+    const category = selectCategory.value;
+    const budget = selectBudget.value;
+    const minPrice = parseFloat(inputMinPrice.value);
+    const maxPrice = parseFloat(inputMaxPrice.value);
+
+    const filtered = allProperties.filter(p => {
+      // 1. City filter
+      if (city !== "all") {
+        const loc = (p.location || "").toLowerCase();
+        if (loc.indexOf(city.toLowerCase()) === -1) return false;
+      }
+
+      // 2. Property Type
+      if (type !== "all" && p.type !== type) return false;
+
+      // 3. Bedrooms
+      if (beds !== "all") {
+        if (beds === "10+") {
+          if (p.bedrooms < 10) return false;
+        } else {
+          if (p.bedrooms !== parseInt(beds, 10)) return false;
+        }
+      }
+
+      // 4. Bathrooms
+      if (baths !== "all") {
+        if (baths === "10+") {
+          if (p.bathrooms < 10) return false;
+        } else {
+          if (p.bathrooms !== parseInt(baths, 10)) return false;
+        }
+      }
+
+      // 5. Category (For Sale / Rent)
+      if (category !== "all" && p.category !== category) return false;
+
+      // 6. Budget Tier
+      if (budget !== "all" && p.budgetCategory !== budget) return false;
+
+      // 7. Price Min/Max
+      var pPrice = Number(p.price);
+      if (!isNaN(minPrice) && pPrice < minPrice) return false;
+      if (!isNaN(maxPrice) && pPrice > maxPrice) return false;
+
+      return true;
+    });
+
+    // Sort by seller rating (highest first), then newest-added
+    filtered.sort((a, b) => {
+      var ra = sellerRatingCache[a.userId] || null;
+      var rb = sellerRatingCache[b.userId] || null;
+      var scoreA = ra ? ra.avg : 0;
+      var scoreB = rb ? rb.avg : 0;
+      if (scoreA !== scoreB) return scoreB - scoreA;
+      return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+    });
+
+    renderGrid(filtered);
+  }
+
+  function resetFilters() {
+    selectCity.value = "all";
+    selectType.value = "all";
+    selectBedrooms.value = "all";
+    selectBathrooms.value = "all";
+    selectCategory.value = "all";
+    selectBudget.value = "all";
+    inputMinPrice.value = "";
+    inputMaxPrice.value = "";
+    syncBedBathOptionsToTier();
+    applyFilters();
+  }
+
+  applyBtn.addEventListener("click", () => {
+    loadingOverlay.classList.remove("d-none");
+    setTimeout(() => {
+      applyFilters();
+      loadingOverlay.classList.add("d-none");
+    }, 400);
+  });
+
+  resetFiltersBtn.addEventListener("click", () => {
+    loadingOverlay.classList.remove("d-none");
+    setTimeout(() => {
+      resetFilters();
+      loadingOverlay.classList.add("d-none");
+    }, 400);
+  });
+
+  // Enter key support
+  [selectCity, selectType, selectBedrooms, selectBathrooms, selectCategory, selectBudget, inputMinPrice, inputMaxPrice].forEach(el => {
+    el.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        applyBtn.click();
+      }
+    });
+  });
+
+  // Auto-clear stale price range whenever the Budget Tier OR the Category
+  // (For Sale / For Rent) changes, since each combination has a very
+  // different price scale (e.g. Budget Rent ~25K-65K vs Budget Buy
+  // ~9M-19M, or Budget vs Premium vs Luxury). Without this, an old
+  // Min/Max Price left over from a different tier or category silently
+  // zeroes out every result when you switch to another one.
+  [selectBudget, selectCategory].forEach(el => {
+    el.addEventListener("change", () => {
+      inputMinPrice.value = "";
+      inputMaxPrice.value = "";
+    });
+  });
+
+  // Each Budget Tier only ever generates properties within a fixed
+  // bedroom/bathroom range (Budget: 1-3 bed / 1-4 bath, Premium: 3-5 bed /
+  // 3-6 bath, Luxury: 4-8 bed / 5-9 bath). Selecting a bedroom/bathroom
+  // value outside the current tier's range is guaranteed to return zero
+  // results with no explanation, which is exactly what looked like a
+  // "filters are broken" bug. Disable out-of-range options instead, and
+  // snap the selection back to "Any" if it's no longer valid.
+  const TIER_RANGES = {
+    Budget:  { beds: [1, 3], baths: [1, 4] },
+    Premium: { beds: [3, 5], baths: [3, 6] },
+    Luxury:  { beds: [4, 8], baths: [5, 9] }
+  };
+
+  function syncBedBathOptionsToTier() {
+    const tier = selectBudget.value;
+    const range = TIER_RANGES[tier]; // undefined when tier === "all"
+
+    [selectBedrooms, selectBathrooms].forEach(sel => {
+      const key = sel === selectBedrooms ? "beds" : "baths";
+      let currentValueStillValid = true;
+
+      Array.from(sel.options).forEach(opt => {
+        if (opt.value === "all") return;
+
+        let optValid = true;
+        if (range) {
+          const [min, max] = range[key];
+          if (opt.value === "10+") {
+            optValid = max >= 10;
+          } else {
+            const n = parseInt(opt.value, 10);
+            optValid = n >= min && n <= max;
+          }
+        }
+        opt.disabled = !optValid;
+        opt.hidden = !optValid;
+
+        if (sel.value === opt.value && !optValid) {
+          currentValueStillValid = false;
+        }
+      });
+
+      if (!currentValueStillValid) {
+        sel.value = "all";
+      }
+    });
+  }
+
+  selectBudget.addEventListener("change", syncBedBathOptionsToTier);
+
+  // ===================== AI SEARCH ASSISTANT =====================
+  // Sends the free-text query directly to Groq's free API (same
+  // key/model already used by area-insight.js and ai-chatbot.js — no
+  // paid Firebase plan, no server needed) to extract structured filters
+  // + a natural reply. Maps the result onto the existing filter controls
+  // (type, beds, baths, category, budget tier, price range, keyword
+  function setMode(mode) {
+    currentMode = mode;
+    if (mode === "manage") {
+      btnManageMode.classList.add("active");
+      btnViewMode.classList.remove("active");
+      btnAddProperty.classList.remove("d-none");
+    } else {
+      btnViewMode.classList.add("active");
+      btnManageMode.classList.remove("active");
+      btnAddProperty.classList.add("d-none");
+    }
+    applyFilters();
+  }
+
+  btnViewMode.addEventListener("click", () => setMode("view"));
+  btnManageMode.addEventListener("click", () => setMode("manage"));
+
+  window.openDetails = async function(id) {
+    const p = await API.getById(id);
+    if (!p) return;
+
+    // Defensive defaults — older or hand-edited records in the database
+    // might be missing these array fields entirely, which used to crash
+    // this whole function with "Cannot read properties of undefined".
+    if (!Array.isArray(p.images) || p.images.length === 0) {
+      p.images = [p.image || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80'];
+    }
+    if (!Array.isArray(p.features)) {
+      p.features = [];
+    }
+
+    const modalTitle = $("propDetailModalLabel");
+    const modalBody = $("propDetailBody");
+
+    modalTitle.textContent = p.title;
+
+    const slidesHtml = p.images.map((img, idx) => `
+      <div class="carousel-item ${idx === 0 ? 'active' : ''}">
+        <div class="modal-gallery-wrap">
+          <img src="${img}" class="modal-gallery-img" alt="${p.title}" onerror="this.src='https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80'">
+        </div>
+      </div>
+    `).join("");
+
+    const indicatorsHtml = p.images.map((_, idx) => `
+      <button type="button" data-bs-target="#modalGalleryCarousel" data-bs-slide-to="${idx}" class="${idx === 0 ? 'active' : ''}" aria-current="${idx === 0 ? 'true' : 'false'}" aria-label="Slide ${idx + 1}"></button>
+    `).join("");
+
+    const specBeds = p.bedrooms > 0 ? `
+      <div class="col-4 col-md-3">
+        <div class="spec-box">
+          <i class="bi bi-bed-fill"></i>
+          <div class="spec-box-val">${p.bedrooms}</div>
+          <div class="spec-box-lbl">Bedrooms</div>
+        </div>
+      </div>` : "";
+
+    const specBaths = p.bathrooms > 0 ? `
+      <div class="col-4 col-md-3">
+        <div class="spec-box">
+          <i class="bi bi-water"></i>
+          <div class="spec-box-val">${p.bathrooms}</div>
+          <div class="spec-box-lbl">Bathrooms</div>
+        </div>
+      </div>` : "";
+
+    const specArea = p.area ? `
+      <div class="col-4 col-md-3">
+        <div class="spec-box">
+          <i class="bi bi-rulers"></i>
+          <div class="spec-box-val">${p.area}</div>
+          <div class="spec-box-lbl">Area Size</div>
+        </div>
+      </div>` : "";
+
+    const specType = `
+      <div class="col-4 col-md-3">
+        <div class="spec-box">
+          <i class="bi bi-house-door-fill"></i>
+          <div class="spec-box-val">${p.type}</div>
+          <div class="spec-box-lbl">Property Type</div>
+        </div>
+      </div>`;
+
+    const featuresHtml = p.features.map(f => `<span class="feature-badge"><i class="bi bi-check2-circle text-yellow me-1"></i>${f}</span>`).join("");
+
+    modalBody.innerHTML = `
+      <div class="row g-4">
+        <div class="col-lg-7">
+          <div id="modalGalleryCarousel" class="carousel slide" data-bs-ride="carousel">
+            <div class="carousel-indicators">
+              ${indicatorsHtml}
+            </div>
+            <div class="carousel-inner">
+              ${slidesHtml}
+            </div>
+            <button class="carousel-control-prev" type="button" data-bs-target="#modalGalleryCarousel" data-bs-slide="prev">
+              <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+              <span class="visually-hidden">Previous</span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#modalGalleryCarousel" data-bs-slide="next">
+              <span class="carousel-control-next-icon" aria-hidden="true"></span>
+              <span class="visually-hidden">Next</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="col-lg-5">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <span class="badge bg-warning text-dark px-3 py-2 fw-bold fs-6">${p.category}</span>
+            <span class="badge bg-dark border border-warning text-warning px-3 py-2 fw-bold fs-6">${p.budgetCategory}</span>
+          </div>
+
+          <h3 class="fs-4 fw-bold text-yellow mb-3">${formatPrice(p.price, p.category)}</h3>
+
+          <div class="text-secondary small mb-3">
+            <i class="bi bi-geo-alt-fill text-danger me-1"></i> ${p.location}
+          </div>
+
+          <div class="row g-2 mb-4">
+            ${specBeds}
+            ${specBaths}
+            ${specArea}
+            ${specType}
+          </div>
+
+          <h5 class="fs-6 fw-bold mb-2">Property Features</h5>
+          <div class="d-flex flex-wrap gap-2 mb-4">
+            ${featuresHtml || '<span class="text-muted small">No special features listed</span>'}
+          </div>
+        </div>
+
+        <div class="col-12 mt-2">
+          <h5 class="fs-6 fw-bold mb-2">Description</h5>
+          <p style="line-height:1.7; font-size:0.92rem; text-align:justify;">${p.description}</p>
+        </div>
+
+        <div class="col-12 border-top pt-4">
+          <h5 class="fs-6 fw-bold mb-3">Contact Information</h5>
+          <div class="agent-card" style="display:flex;flex-wrap:wrap;gap:0.75rem;">
+            <div class="d-flex align-items-center gap-3 flex-grow-1">
+              <div class="agent-avatar">
+                ${p.contactInfo.name.charAt(0)}
+              </div>
+              <div>
+                <div class="agent-name">${p.contactInfo.name}</div>
+                <div class="agent-role">NestFinder Certified Partner Agent</div>
+                <div class="mt-2 d-flex flex-wrap gap-3 small">
+                  <span><i class="bi bi-telephone-fill text-yellow me-1"></i>${p.contactInfo.phone}</span>
+                  <span><i class="bi bi-envelope-fill text-yellow me-1"></i>${p.contactInfo.email}</span>
+                </div>
+              </div>
+            </div>
+            <div id="sellerRating-${p.userId || 'anon'}" class="seller-rating-wrap" data-seller="${p.userId || ''}" data-propid="${p.id || 0}" style="flex-shrink:0;min-width:180px;border-left:1px solid rgba(255,255,255,0.08);padding-left:1rem;">
+              <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.5px;color:#9ca3af;font-weight:600;margin-bottom:2px;">Seller Rating</div>
+              <div class="seller-stars" style="font-size:1.1rem;line-height:1.4;white-space:nowrap;">
+                <span class="star-display">—</span>
+                <span class="star-count" style="font-size:0.75rem;color:#9ca3af;margin-left:4px;"></span>
+              </div>
+              <div class="seller-rate-action" style="font-size:0.75rem;margin-top:2px;">
+                <a href="#" class="rate-link" style="color:#f59e0b;text-decoration:none;">Click to rate</a>
+              </div>
+            </div>
+          </div>
+        <div class="col-12 mt-2 border-top pt-4">
+          <h5 class="fs-6 fw-bold mb-3">Location</h5>
+          <div class="propDetailMap" data-lat="${p.lat || 24.8607}" data-lng="${p.lng || 67.0011}" data-location="${p.location}" style="height:220px;border-radius:12px;border:1px solid rgba(245,158,11,0.15);margin-bottom:0.5rem;"></div>
+          <div class="small" style="color:#9ca3af;"><i class="bi bi-geo-alt text-yellow me-1"></i>${p.location}</div>
+        </div>
+        <div class="col-12 mt-4 border-top pt-4">
+          <div id="reviewsSection"></div>
+        </div>
+      </div>
+    `;
+
+    if (window.NestFinderReviews) {
+      window.NestFinderReviews.renderInto("reviewsSection", p.id);
+    }
+
+    if (!activeDetailsModal) {
+      activeDetailsModal = new bootstrap.Modal(detailModalEl);
+    }
+    activeDetailsModal.show();
+
+    // Init detail map when modal finishes opening
+    setTimeout(function() {
+      document.querySelectorAll('.propDetailMap').forEach(function(el) {
+        var lat = parseFloat(el.getAttribute('data-lat'));
+        var lng = parseFloat(el.getAttribute('data-lng'));
+        var locName = el.getAttribute('data-location') || '';
+        if (!isNaN(lat) && !isNaN(lng)) {
+          var m = L.map(el, { zoomControl: true }).setView([lat, lng], 15);
+          L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; OSM &copy; CARTO', maxZoom: 19, subdomains: 'abcd' }).addTo(m);
+          var marker = L.marker([lat, lng]).addTo(m);
+          if (locName) marker.bindPopup(locName).openPopup();
+          setTimeout(function() { m.invalidateSize(); }, 200);
+        }
+      });
+    }, 500);
+
+    // Load seller rating
+    var sellerId = p.userId;
+    if (sellerId) {
+      loadSellerRating(sellerId, p);
+    }
+  };
+
+  // ===================== SELLER RATING SYSTEM =====================
+  var ratingSellerId = null;
+  var ratingPropHolder = null;
+  var selectedRating = 0;
+  var ratingModalEl = document.getElementById('sellerRatingModal');
+  var ratingModal = null;
+  if (ratingModalEl) ratingModal = new bootstrap.Modal(ratingModalEl);
+
+  function loadSellerRating(sellerId, prop) {
+    var wrap = document.getElementById('sellerRating-' + sellerId);
+    if (!wrap) return;
+    var starEl = wrap.querySelector('.star-display');
+    var countEl = wrap.querySelector('.star-count');
+    var rateLink = wrap.querySelector('.rate-link');
+    var ratingsRef = firebase.database().ref('sellerRatings/' + sellerId + '/ratings');
+    ratingsRef.once('value', function(snap) {
+      var data = snap.val();
+      if (!data) {
+        starEl.innerHTML = '<span style="color:#888;font-size:0.8rem;">New Seller</span>';
+        countEl.textContent = '';
+        return;
+      }
+      var vals = Object.values(data);
+      var total = vals.reduce(function(s, r) { return s + (r.rating || 0); }, 0);
+      var count = vals.length;
+      var avg = total / count;
+      var full = Math.round(avg);
+      var stars = '';
+      for (var i = 1; i <= 5; i++) {
+        stars += i <= full ? '<span style="color:#f59e0b;">★</span>' : '<span style="color:#555;">☆</span>';
+      }
+      starEl.innerHTML = stars;
+      countEl.textContent = '(' + count + ')';
+    });
+
+    if (rateLink) {
+      rateLink.onclick = function(e) {
+        e.preventDefault();
+        var user = window.NestFinderAuth && window.NestFinderAuth.getCurrentUser();
+        if (!user) {
+          alert('Please sign in to rate this seller.');
+          return;
+        }
+        if (user.id === sellerId) {
+          alert('You cannot rate yourself.');
+          return;
+        }
+        ratingSellerId = sellerId;
+        ratingPropHolder = prop;
+        selectedRating = 0;
+        document.getElementById('btnSubmitRating').disabled = true;
+        document.getElementById('rateLabel').textContent = 'Click a star to rate';
+        document.querySelectorAll('#rateStars .rate-star').forEach(function(s) {
+          s.className = 'bi bi-star rate-star';
+          s.style.color = '#555';
+        });
+        if (ratingModal) ratingModal.show();
+      };
+    }
+  }
+
+  // Star hover/click in rating modal
+  document.querySelectorAll('#rateStars .rate-star').forEach(function(s) {
+    s.addEventListener('mouseenter', function() {
+      var val = parseInt(this.getAttribute('data-val'));
+      document.querySelectorAll('#rateStars .rate-star').forEach(function(ss) {
+        var v = parseInt(ss.getAttribute('data-val'));
+        ss.className = v <= val ? 'bi bi-star-fill rate-star' : 'bi bi-star rate-star';
+        ss.style.color = v <= val ? '#f59e0b' : '#555';
+      });
+    });
+    s.addEventListener('mouseleave', function() {
+      document.querySelectorAll('#rateStars .rate-star').forEach(function(ss) {
+        var v = parseInt(ss.getAttribute('data-val'));
+        if (selectedRating > 0) {
+          ss.className = v <= selectedRating ? 'bi bi-star-fill rate-star' : 'bi bi-star rate-star';
+          ss.style.color = v <= selectedRating ? '#f59e0b' : '#555';
+        } else {
+          ss.className = 'bi bi-star rate-star';
+          ss.style.color = '#555';
+        }
+      });
+    });
+    s.addEventListener('click', function() {
+      selectedRating = parseInt(this.getAttribute('data-val'));
+      document.querySelectorAll('#rateStars .rate-star').forEach(function(ss) {
+        var v = parseInt(ss.getAttribute('data-val'));
+        ss.className = v <= selectedRating ? 'bi bi-star-fill rate-star' : 'bi bi-star rate-star';
+        ss.style.color = v <= selectedRating ? '#f59e0b' : '#555';
+      });
+      document.getElementById('rateLabel').textContent = 'Your rating: ' + selectedRating + ' / 5';
+      document.getElementById('btnSubmitRating').disabled = false;
+    });
+  });
+
+  document.getElementById('btnSubmitRating').addEventListener('click', async function() {
+    if (!selectedRating || !ratingSellerId) return;
+    var user = window.NestFinderAuth && window.NestFinderAuth.getCurrentUser();
+    if (!user) { alert('Please sign in first.'); return; }
+    var btn = this;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-arrow-repeat spin me-1"></i> Saving...';
+    try {
+      var db = firebase.database();
+      var ratingRef = db.ref('sellerRatings/' + ratingSellerId + '/ratings/' + user.id);
+      await ratingRef.set({ rating: selectedRating, timestamp: new Date().toISOString() });
+      if (ratingModal) ratingModal.hide();
+      btn.innerHTML = 'Submit Rating';
+      btn.disabled = true;
+    } catch (err) {
+      alert('Failed to save rating: ' + err.message);
+      btn.disabled = false;
+      btn.innerHTML = 'Submit Rating';
+    }
+  });
+
+  btnAddProperty.addEventListener("click", () => {
+    editingPropertyId = null;
+    crudModalTitle.textContent = "Add Property Listing";
+    crudForm.reset();
+
+    $("propContactName").value = "Zubair Ahmed";
+    $("propContactPhone").value = "+92 300 1234567";
+    $("propContactEmail").value = "zubair@nestfinder.ai";
+
+    if (!activeCrudModal) {
+      activeCrudModal = new bootstrap.Modal(crudModalEl);
+    }
+    activeCrudModal.show();
+  });
+
+  window.editProperty = async function(id, event) {
+    if (event) event.stopPropagation();
+
+    editingPropertyId = id;
+    crudModalTitle.textContent = "Edit Property Listing";
+
+    const p = await API.getById(id);
+    if (!p) return;
+
+    $("propTitle").value = p.title;
+    $("propType").value = p.type;
+    $("propCategory").value = p.category;
+    $("propBudgetCategory").value = p.budgetCategory;
+    $("propPrice").value = p.price;
+    $("propLocation").value = p.location;
+    $("propBedrooms").value = p.bedrooms;
+    $("propBathrooms").value = p.bathrooms;
+    $("propArea").value = p.area;
+    $("propDescription").value = p.description;
+    $("propImage").value = p.image;
+    $("propFeatures").value = (p.features || []).join(", ");
+    $("propContactName").value = (p.contactInfo && p.contactInfo.name) || "";
+    $("propContactPhone").value = (p.contactInfo && p.contactInfo.phone) || "";
+    $("propContactEmail").value = (p.contactInfo && p.contactInfo.email) || "";
+    $("propStatus").value = p.status;
+
+    if (!activeCrudModal) {
+      activeCrudModal = new bootstrap.Modal(crudModalEl);
+    }
+    activeCrudModal.show();
+  };
+
+  crudForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const featuresArr = $("propFeatures").value
+      ? $("propFeatures").value.split(",").map(f => f.trim()).filter(f => f !== "")
+      : [];
+
+    const formData = {
+      title: $("propTitle").value,
+      type: $("propType").value,
+      category: $("propCategory").value,
+      budgetCategory: $("propBudgetCategory").value,
+      price: parseFloat($("propPrice").value),
+      location: $("propLocation").value,
+      bedrooms: parseInt($("propBedrooms").value, 10) || 0,
+      bathrooms: parseInt($("propBathrooms").value, 10) || 0,
+      area: $("propArea").value,
+      description: $("propDescription").value,
+      image: $("propImage").value || "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80",
+      images: [
+        $("propImage").value || "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80",
+        "https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?w=800&q=80",
+        "https://images.unsplash.com/photo-1600566752355-35792bedcfea?w=800&q=80"
+      ],
+      features: featuresArr,
+      contactInfo: {
+        name: $("propContactName").value || "Zubair Ahmed",
+        phone: $("propContactPhone").value || "+92 300 1234567",
+        email: $("propContactEmail").value || "zubair@nestfinder.ai"
+      },
+      status: $("propStatus").value || "Active"
+    };
+
+    loadingOverlay.classList.remove("d-none");
+    try {
+      if (editingPropertyId) {
+        await API.update(editingPropertyId, formData);
+        showToast("Property updated successfully!");
+      } else {
+        await API.create(formData);
+        showToast("Property listing created successfully!");
+      }
+      activeCrudModal.hide();
+      await loadData(false);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to save property listing.");
+    } finally {
+      loadingOverlay.classList.add("d-none");
+    }
+  });
+
+  window.deleteProperty = async function(id, event) {
+    if (event) event.stopPropagation();
+
+    if (confirm("Are you sure you want to delete this property listing?")) {
+      loadingOverlay.classList.remove("d-none");
+      try {
+        const deleted = await API.delete(id);
+        if (deleted) {
+          showToast("Property deleted successfully.");
+          await loadData(false);
+        } else {
+          alert("Failed to delete property.");
+        }
+      } catch (e) {
+        console.error(e);
+        alert("An error occurred during deletion.");
+      } finally {
+        loadingOverlay.classList.add("d-none");
+      }
+    }
+  };
+
+  if (btnRemoveDummy) {
+  btnRemoveDummy.addEventListener("click", async () => {
+    if (confirm("This removes only the old auto-generated dummy properties. Any real listings sellers have added (yours included) will be kept safe. Continue?")) {
+      loadingOverlay.classList.remove("d-none");
+      try {
+        const { removed, kept } = await API.removeDummyData();
+        showToast(`Removed ${removed} dummy propert${removed === 1 ? 'y' : 'ies'}. ${kept} real listing${kept === 1 ? '' : 's'} kept.`);
+        await loadData(false);
+      } catch (e) {
+        console.error(e);
+        alert("Failed to remove dummy data.");
+      } finally {
+        loadingOverlay.classList.add("d-none");
+      }
+    }
+  });
+}
+
+if (btnResetDb) {
+  btnResetDb.addEventListener("click", async () => {
+    if (confirm("This will permanently delete ALL real property listings from the database. This cannot be undone. Continue?")) {
+      loadingOverlay.classList.remove("d-none");
+      try {
+        await API.reset();
+        showToast("All properties cleared.");
+        await loadData(false);
+      } catch (e) {
+        console.error(e);
+        alert("Failed to clear database.");
+      } finally {
+        loadingOverlay.classList.add("d-none");
+      }
+    }
+  });
+}
+
+  function showToast(message) {
+    const toastEl = document.createElement("div");
+    toastEl.style.position = "fixed";
+    toastEl.style.bottom = "24px";
+    toastEl.style.right = "24px";
+    toastEl.style.backgroundColor = "#f59e0b";
+    toastEl.style.color = "#000000";
+    toastEl.style.padding = "12px 24px";
+    toastEl.style.borderRadius = "8px";
+    toastEl.style.fontWeight = "700";
+    toastEl.style.boxShadow = "0 4px 15px rgba(0,0,0,0.3)";
+    toastEl.style.zIndex = "9999";
+    toastEl.style.animation = "fadeInUp 0.3s ease-out";
+    toastEl.innerHTML = `<i class="bi bi-check-circle-fill me-2"></i> ${message}`;
+
+    document.body.appendChild(toastEl);
+
+    setTimeout(() => {
+      toastEl.style.animation = "fadeInUp 0.3s ease-out reverse";
+      setTimeout(() => {
+        toastEl.remove();
+      }, 300);
+    }, 3000);
+  }
+
+  await loadData();
+});
+  </script>
+<script src="ai-chatbot.js"></script>
+<script src="js/navbar.js"></script>
+</body>
+</html>

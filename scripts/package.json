@@ -1,0 +1,12 @@
+{
+  "name": "nestfinder-cleanup-script",
+  "private": true,
+  "description": "One-time admin script to permanently delete dummy property data from Firebase",
+  "main": "delete-dummy-data.js",
+  "scripts": {
+    "clean": "node delete-dummy-data.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.1.0"
+  }
+}

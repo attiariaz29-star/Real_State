@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="View listing details on NestFinder. Check pricing, location specifications, and book tours instantly.">
+    <title>Property Details - NestFinder AI</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Skip to main content for accessibility -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <!-- Navigation -->
+    <div id="navbar-root"></div>
+
+    <!-- Main Container -->
+    <main id="main-content" style="padding-top: 100px; min-height: 80vh;">
+        <div class="container py-5" id="listingContainer">
+            <!-- Loading Indicator -->
+            <div id="loadingIndicator" class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="text-muted mt-3">Fetching property details...</p>
+            </div>
+
+            <!-- Error Message (Hidden by default) -->
+            <div id="errorBox" class="alert alert-danger d-none my-5" role="alert">
+                <h4 class="alert-heading"><i class="bi bi-exclamation-triangle-fill me-2"></i>Property Not Found</h4>
+                <p>We are sorry, but the property you are looking for does not exist or has been removed.</p>
+                <hr>
+                <a href="index.html" class="btn btn-outline-danger btn-sm"><i class="bi bi-arrow-left me-1"></i>Back to Insights</a>
+            </div>
+
+            <!-- Main Layout (Hidden by default) -->
+            <div id="listingContent" class="d-none">
+                <!-- Back Link -->
+                <div class="mb-4">
+                    <a href="index.html" class="text-decoration-none fw-semibold d-inline-flex align-items-center gap-1">
+                        <i class="bi bi-arrow-left"></i> Back to Area Insights
+                    </a>
+                </div>
+
+                <!-- Title & Location Row -->
+                <div class="row align-items-start mb-4">
+                    <div class="col-md-8">
+                        <span class="badge bg-primary text-uppercase px-3 py-2 rounded-pill fw-bold mb-2" id="listingPurposeBadge">BUY</span>
+                        <h1 class="h2 fw-bold text-dark mb-2" id="listingTitle">Luxury Villa</h1>
+                        <p class="text-muted mb-0"><i class="bi bi-geo-alt-fill text-danger me-1"></i> <span id="listingLocation">DHA Phase 6, Karachi</span></p>
+                    </div>
+                    <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                        <div class="h3 fw-bold text-primary font-monospace mb-1" id="listingPrice">PKR 8.5 Crore</div>
+                        <span class="badge bg-light text-dark border rounded-pill px-3 py-1 font-monospace" id="listingAreaSize">500 sq yards</span>
+                    </div>
+                </div>
+
+                <!-- Main Gallery -->
+                <div class="row g-3 mb-5" id="listingGallery">
+                    <!-- Standard grid layout of 4 property images -->
+                    <div class="col-lg-6">
+                        <div class="rounded-4 overflow-hidden shadow-sm" style="height: 410px;">
+                            <img id="mainImage" src="" alt="Property Exterior" class="w-100 h-100 object-fit-cover transition-hover">
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <div class="rounded-4 overflow-hidden shadow-sm" style="height: 197px;">
+                                    <img id="galleryImage1" src="" alt="Living Room" class="w-100 h-100 object-fit-cover transition-hover">
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="rounded-4 overflow-hidden shadow-sm" style="height: 197px;">
+                                    <img id="galleryImage2" src="" alt="Kitchen" class="w-100 h-100 object-fit-cover transition-hover">
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="rounded-4 overflow-hidden shadow-sm" style="height: 197px;">
+                                    <img id="galleryImage3" src="" alt="Bedroom" class="w-100 h-100 object-fit-cover transition-hover">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Details Section -->
+                <div class="row g-4">
+                    <!-- Left: Description and Specifications -->
+                    <div class="col-lg-8">
+                        <div class="card border-0 shadow-sm p-4 rounded-4 bg-body mb-4">
+                            <h2 class="h5 fw-bold text-dark border-bottom pb-2 mb-3">Overview & Description</h2>
+                            <p class="text-secondary" style="line-height: 1.8;" id="listingDescription">Property Description</p>
+                        </div>
+
+                        <!-- Specifications -->
+                        <div class="card border-0 shadow-sm p-4 rounded-4 bg-body mb-4">
+                            <h2 class="h5 fw-bold text-dark border-bottom pb-2 mb-3">Specifications</h2>
+                            <div class="row row-cols-2 row-cols-md-4 g-3 text-center">
+                                <div class="col">
+                                    <div class="p-3 border rounded-3 bg-light-gradient">
+                                        <i class="bi bi-bed text-primary fs-3 d-block mb-1"></i>
+                                        <small class="text-muted d-block">Bedrooms</small>
+                                        <strong class="fs-5 text-dark" id="listingBeds">3</strong>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="p-3 border rounded-3 bg-light-gradient">
+                                        <i class="bi bi-water text-primary fs-3 d-block mb-1"></i>
+                                        <small class="text-muted d-block">Bathrooms</small>
+                                        <strong class="fs-5 text-dark" id="listingBaths">4</strong>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="p-3 border rounded-3 bg-light-gradient">
+                                        <i class="bi bi-rulers text-primary fs-3 d-block mb-1"></i>
+                                        <small class="text-muted d-block">Built Area</small>
+                                        <strong class="fs-6 text-dark text-truncate d-block" id="listingSizeSpec">500 Yards</strong>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="p-3 border rounded-3 bg-light-gradient">
+                                        <i class="bi bi-house-door text-primary fs-3 d-block mb-1"></i>
+                                        <small class="text-muted d-block">Type</small>
+                                        <strong class="fs-5 text-dark" id="listingType">Villa</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Features and Amenities -->
+                        <div class="card border-0 shadow-sm p-4 rounded-4 bg-body mb-4">
+                            <h2 class="h5 fw-bold text-dark border-bottom pb-2 mb-3">Key Features & Amenities</h2>
+                            <div class="d-flex flex-wrap gap-2" id="listingFeatures">
+                                <!-- Injected dynamically -->
+                            </div>
+                        </div>
+
+                        <!-- Nearby Locations -->
+                        <div class="card border-0 shadow-sm p-4 rounded-4 bg-body mb-4">
+                            <h2 class="h5 fw-bold text-dark border-bottom pb-2 mb-3">Nearby Facilities & Location Advantages</h2>
+                            <div class="d-flex flex-wrap gap-2" id="listingNearby">
+                                <!-- Injected dynamically -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Sticky Tour Booking Card -->
+                    <div class="col-lg-4">
+                        <div class="card border-0 shadow shadow-sm p-4 rounded-4 bg-body sticky-top" style="top: 100px; z-index: 100;">
+                            <h2 class="h5 fw-bold text-dark border-bottom pb-2 mb-3"><i class="bi bi-calendar-check text-primary me-2"></i>Schedule a Visit</h2>
+                            <p class="text-muted small">Our agents will organize a private viewing at your convenience.</p>
+                            
+                            <form id="bookingForm">
+                                <div class="mb-3">
+                                    <label for="bookName" class="form-label small fw-semibold">Your Name</label>
+                                    <input type="text" class="form-control rounded-3" id="bookName" placeholder="Enter your full name" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="bookEmail" class="form-label small fw-semibold">Email Address</label>
+                                    <input type="email" class="form-control rounded-3" id="bookEmail" placeholder="name@domain.com" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="bookPhone" class="form-label small fw-semibold">Phone Number</label>
+                                    <input type="tel" class="form-control rounded-3" id="bookPhone" placeholder="+92 3XX XXXXXXX" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="bookDate" class="form-label small fw-semibold">Preferred Date</label>
+                                    <input type="date" class="form-control rounded-3" id="bookDate" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100 py-2 rounded-3 fw-bold mt-2">
+                                    <i class="bi bi-send-fill me-1"></i> Request Tour
+                                </button>
+                            </form>
+
+                            <!-- Success Dialog (Hidden) -->
+                            <div id="bookingSuccess" class="alert alert-success d-none mt-3 mb-0 text-center" role="alert">
+                                <i class="bi bi-check-circle-fill fs-4 d-block mb-1 text-success"></i>
+                                <strong class="d-block">Tour Requested!</strong>
+                                <span class="small text-secondary">Our representative will call you shortly.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer py-5" id="contact">
+        <div class="container">
+            <div class="row g-4">
+                <div class="col-lg-4">
+                    <div class="footer-brand">
+                        <i class="bi bi-house-heart-fill me-2"></i>
+                        <span class="brand-text">NestFinder</span>
+                        <span class="brand-ai">AI</span>
+                    </div>
+                    <p class="footer-desc">Pakistan's first AI-powered real estate platform. Finding your dream home with intelligent technology.</p>
+                </div>
+                <div class="col-lg-4 offset-lg-4 col-md-4">
+                    <h3>Contact Us</h3>
+                    <ul class="footer-contact">
+                        <li><i class="bi bi-geo-alt me-2"></i> Karachi, Pakistan</li>
+                        <li><i class="bi bi-envelope me-2"></i> hello@nestfinder.ai</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom mt-4 pt-4">
+                <p class="copyright text-center">&copy; 2026 NestFinder AI. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Firebase + Auth (for navbar user state) -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/auth-shared.js"></script>
+
+    <!-- Details Page Logic -->
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            loadPropertyDetails();
+            initBookingForm();
+        });
+
+        function loadPropertyDetails() {
+            // Get URL param id
+            const urlParams = new URLSearchParams(window.location.search);
+            const id = parseInt(urlParams.get('id'));
+
+            const loading = document.getElementById("loadingIndicator");
+            const content = document.getElementById("listingContent");
+            const errorBox = document.getElementById("errorBox");
+
+            if (!id) {
+                loading.classList.add("d-none");
+                errorBox.classList.remove("d-none");
+                return;
+            }
+
+            // Retrieve properties database
+            let properties = [];
+            try {
+                properties = JSON.parse(sessionStorage.getItem("area_insights_properties")) || [];
+            } catch (e) {
+                console.error("Failed to parse sessionStorage properties", e);
+            }
+
+            const p = properties.find(item => item.id === id);
+
+            if (!p) {
+                loading.classList.add("d-none");
+                errorBox.classList.remove("d-none");
+                return;
+            }
+
+            // Populate DOM
+            document.title = `${p.title} - NestFinder AI`;
+            document.getElementById("listingTitle").textContent = p.title;
+            document.getElementById("listingPrice").textContent = p.priceDisplay;
+            document.getElementById("listingLocation").textContent = p.location;
+            document.getElementById("listingAreaSize").textContent = p.areaSize;
+            document.getElementById("listingDescription").textContent = p.description;
+
+            // Specifications
+            document.getElementById("listingBeds").textContent = p.bedrooms;
+            document.getElementById("listingBaths").textContent = p.bathrooms;
+            document.getElementById("listingSizeSpec").textContent = p.areaSize;
+            document.getElementById("listingType").textContent = p.propertyType;
+
+            // Badges
+            const purposeBadge = document.getElementById("listingPurposeBadge");
+            purposeBadge.textContent = `For ${p.purpose}`;
+            if (p.purpose === "Rent") {
+                purposeBadge.className = "badge bg-info text-dark text-uppercase px-3 py-2 rounded-pill fw-bold mb-2";
+            } else {
+                purposeBadge.className = "badge bg-success text-white text-uppercase px-3 py-2 rounded-pill fw-bold mb-2";
+            }
+
+            // Images
+            document.getElementById("mainImage").src = p.carouselImages[0];
+            document.getElementById("galleryImage1").src = p.carouselImages[1];
+            document.getElementById("galleryImage2").src = p.carouselImages[2];
+            document.getElementById("galleryImage3").src = p.carouselImages[3];
+
+            // Features List
+            const featuresContainer = document.getElementById("listingFeatures");
+            featuresContainer.innerHTML = p.features.map(f => `
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill font-monospace px-3 py-2" style="font-size: 0.8rem;">
+                    ${f}
+                </span>
+            `).join('');
+
+            // Nearby List
+            const nearbyContainer = document.getElementById("listingNearby");
+            nearbyContainer.innerHTML = p.nearby.map(n => `
+                <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill font-monospace px-3 py-2" style="font-size: 0.8rem;">
+                    ${n}
+                </span>
+            `).join('');
+
+            // Toggle views
+            loading.classList.add("d-none");
+            content.classList.remove("d-none");
+        }
+
+        function initBookingForm() {
+            const form = document.getElementById("bookingForm");
+            const success = document.getElementById("bookingSuccess");
+
+            if (!form) return;
+
+            form.addEventListener("submit", (e) => {
+                e.preventDefault();
+                
+                // Hide form inputs and submit button
+                form.classList.add("d-none");
+                success.classList.remove("d-none");
+            });
+        }
+    </script>
+<script src="ai-chatbot.js"></script>
+<script src="js/navbar.js"></script>
+</body>
+</html>
