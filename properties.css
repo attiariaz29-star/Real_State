@@ -83,8 +83,7 @@
   gap: 0.5rem;
 }
 
-[data-bs-theme="dark"] .filter-title,
-.filter-title {
+[data-bs-theme="dark"] .filter-title {
   color: var(--text-dark);
 }
 
@@ -97,8 +96,7 @@
   letter-spacing: 0.5px;
 }
 
-[data-bs-theme="dark"] .filter-label,
-.filter-label {
+[data-bs-theme="dark"] .filter-label {
   color: var(--text-muted-dark);
 }
 

@@ -15,6 +15,124 @@
 
     <!-- Custom CSS -->
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="css/ai-features.css">
+    <style>
+#aiPropertyDetails { margin-top: 1.5rem; }
+.ai-pd-section {
+  background: var(--bs-body-bg, #fff);
+  border: 1px solid var(--bs-border-color, rgba(0,0,0,0.08));
+  border-radius: 16px;
+  padding: 1.25rem;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+}
+.ai-pd-header {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--color-yellow, #f59e0b);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.ai-pd-header i { color: var(--color-yellow, #f59e0b); }
+.ai-pd-body { font-size: 0.9rem; }
+.ai-pd-loading {
+  height: 60px;
+  background: linear-gradient(90deg, transparent 0%, rgba(245,158,11,0.08) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: ai-shimmer 1.5s infinite;
+  border-radius: 8px;
+}
+@keyframes ai-shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+.ai-pd-summary-text { line-height: 1.7; color: var(--bs-body-color, #333); }
+.ai-pd-strength-item { margin-bottom: 0.25rem; color: var(--bs-body-color, #555); }
+
+/* Score Ring */
+.ai-score-ring {
+  position: relative;
+  width: 120px; height: 120px;
+  margin: 0 auto 0.5rem;
+}
+.ai-score-svg { width: 100%; height: 100%; }
+.ai-score-value {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2rem; font-weight: 800;
+}
+.ai-score-label { font-size: 1rem; font-weight: 700; }
+.ai-score-reason { font-size: 0.8rem; color: var(--bs-secondary-color, #888); }
+.ai-score-breakdown { max-width: 250px; margin: 0 auto; }
+.ai-score-bar-bg {
+  width: 60px; height: 6px;
+  background: rgba(128,128,128,0.2);
+  border-radius: 3px;
+  overflow: hidden;
+  align-self: center;
+}
+.ai-score-bar-fill { height: 100%; border-radius: 3px; transition: width 1s ease; }
+
+/* Prediction Chart */
+.ai-prediction-chart { padding: 0.5rem 0; }
+.ai-prediction-bars {
+  display: flex; align-items: flex-end;
+  justify-content: center; gap: 1rem;
+  height: 170px;
+}
+.ai-prediction-bar-group {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 0.25rem;
+  flex: 1; max-width: 90px;
+}
+.ai-prediction-bar {
+  width: 100%; min-height: 24px;
+  background: linear-gradient(180deg, var(--color-yellow, #f59e0b), #d97706);
+  border-radius: 6px 6px 0 0;
+  display: flex; align-items: flex-start;
+  justify-content: center; padding-top: 4px;
+  font-size: 0.6rem; font-weight: 700; color: #000;
+  transition: height 1.2s ease;
+  line-height: 1.1; text-align: center;
+}
+.ai-prediction-future { background: linear-gradient(180deg, #22c55e, #16a34a); }
+.ai-prediction-label { font-size: 0.75rem; font-weight: 600; color: var(--bs-secondary-color, #666); }
+.ai-prediction-app { font-size: 0.65rem; font-weight: 700; color: #22c55e; }
+
+/* Lifestyle */
+.ai-lifestyle-item { margin-bottom: 0.75rem; }
+.ai-lifestyle-bar-bg {
+  height: 6px; background: rgba(128,128,128,0.15);
+  border-radius: 3px; overflow: hidden; margin: 2px 0;
+}
+.ai-lifestyle-bar-fill { height: 100%; border-radius: 3px; transition: width 1.2s ease; }
+
+/* Pros/Cons */
+.ai-pc-item {
+  padding: 0.5rem 0.65rem; border-radius: 8px;
+  margin-bottom: 0.4rem; font-size: 0.85rem;
+}
+.ai-pc-pro { background: rgba(34,197,94,0.08); border-left: 3px solid #22c55e; }
+.ai-pc-con { background: rgba(239,68,68,0.08); border-left: 3px solid #ef4444; }
+.ai-pc-item strong { display: block; margin-bottom: 0.1rem; }
+
+/* Similar Properties */
+.ai-similar-card {
+  border-radius: 12px; overflow: hidden;
+  border: 1px solid rgba(128,128,128,0.15);
+  cursor: pointer; transition: transform 0.25s, box-shadow 0.25s;
+  background: var(--bs-body-bg, #fff);
+}
+.ai-similar-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
+.ai-similar-img {
+  height: 90px; background-size: cover; background-position: center;
+}
+.ai-similar-info { padding: 0.5rem; }
+.ai-similar-title {
+  font-size: 0.8rem; font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.ai-similar-price { font-size: 0.75rem; font-weight: 700; color: var(--color-yellow, #f59e0b); }
+    </style>
 </head>
 <body>
     <!-- Skip to main content for accessibility -->
@@ -54,11 +172,17 @@
                 <!-- Title & Location Row -->
                 <div class="row align-items-start mb-4">
                     <div class="col-md-8">
-                        <span class="badge bg-primary text-uppercase px-3 py-2 rounded-pill fw-bold mb-2" id="listingPurposeBadge">BUY</span>
+                        <div class="d-flex align-items-center gap-2 flex-wrap mb-2">
+                            <span class="badge bg-primary text-uppercase px-3 py-2 rounded-pill fw-bold" id="listingPurposeBadge">BUY</span>
+                        </div>
                         <h1 class="h2 fw-bold text-dark mb-2" id="listingTitle">Luxury Villa</h1>
                         <p class="text-muted mb-0"><i class="bi bi-geo-alt-fill text-danger me-1"></i> <span id="listingLocation">DHA Phase 6, Karachi</span></p>
                     </div>
                     <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                        <div class="d-flex justify-content-md-end gap-2 mb-2">
+                            <button class="btn btn-outline-primary btn-sm rounded-pill" onclick="saveCurrentProperty()" title="Save Property"><i class="bi bi-bookmark"></i></button>
+                            <button class="btn btn-outline-secondary btn-sm rounded-pill" onclick="shareCurrentProperty()" title="Share"><i class="bi bi-share"></i></button>
+                        </div>
                         <div class="h3 fw-bold text-primary font-monospace mb-1" id="listingPrice">PKR 8.5 Crore</div>
                         <span class="badge bg-light text-dark border rounded-pill px-3 py-1 font-monospace" id="listingAreaSize">500 sq yards</span>
                     </div>
@@ -152,6 +276,9 @@
                                 <!-- Injected dynamically -->
                             </div>
                         </div>
+
+                        <!-- ===== AI PROPERTY DETAILS ===== -->
+                        <div id="aiPropertyDetails"></div>
                     </div>
 
                     <!-- Right: Sticky Tour Booking Card -->
@@ -224,23 +351,28 @@
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
-    <!-- Firebase + Auth (for navbar user state) -->
+    <!-- Firebase + Auth + Database -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <script src="js/firebase-config.js"></script>
     <script src="js/auth-shared.js"></script>
+    <script src="js/properties-shared.js"></script>
+    <script src="js/ai-engine.js"></script>
+    <script src="js/ai-property-details.js"></script>
 
     <!-- Details Page Logic -->
     <script>
+        var _savedProperty = null;
+
         document.addEventListener("DOMContentLoaded", () => {
             loadPropertyDetails();
             initBookingForm();
         });
 
-        function loadPropertyDetails() {
-            // Get URL param id
+        async function loadPropertyDetails() {
             const urlParams = new URLSearchParams(window.location.search);
-            const id = parseInt(urlParams.get('id'));
+            const id = urlParams.get('id');
 
             const loading = document.getElementById("loadingIndicator");
             const content = document.getElementById("listingContent");
@@ -252,88 +384,122 @@
                 return;
             }
 
-            // Retrieve properties database
-            let properties = [];
             try {
-                properties = JSON.parse(sessionStorage.getItem("area_insights_properties")) || [];
+                const allProps = await NestFinderAPI.fetchAll();
+                // Try matching by id (number or string) or firebaseKey
+                const p = allProps.find(item => String(item.id) === String(id) || item.firebaseKey === id);
+
+                if (!p) {
+                    loading.classList.add("d-none");
+                    errorBox.classList.remove("d-none");
+                    return;
+                }
+
+                _savedProperty = p;
+
+                document.title = p.title + " - NestFinder AI";
+                document.getElementById("listingTitle").textContent = p.title || "Property";
+                document.getElementById("listingPrice").textContent = p.priceDisplay || (p.price ? "PKR " + formatPrice(p.price) : "N/A");
+                document.getElementById("listingLocation").textContent = p.location || "N/A";
+                document.getElementById("listingAreaSize").textContent = p.areaSize || "N/A";
+                document.getElementById("listingDescription").textContent = p.description || "No description available.";
+
+                document.getElementById("listingBeds").textContent = p.bedrooms || "N/A";
+                document.getElementById("listingBaths").textContent = p.bathrooms || "N/A";
+                document.getElementById("listingSizeSpec").textContent = p.areaSize || "N/A";
+                document.getElementById("listingType").textContent = p.propertyType || p.type || "N/A";
+
+                const purposeBadge = document.getElementById("listingPurposeBadge");
+                const purpose = p.purpose || "Buy";
+                purposeBadge.textContent = "For " + purpose;
+                purposeBadge.className = "badge bg-" + (purpose === "Rent" ? "info" : "success") + " text-white text-uppercase px-3 py-2 rounded-pill fw-bold";
+
+                // Images
+                const images = p.images || p.carouselImages || [];
+                document.getElementById("mainImage").src = images[0] || "https://placehold.co/800x410?text=No+Image";
+                document.getElementById("galleryImage1").src = images[1] || images[0] || "https://placehold.co/400x200?text=No+Image";
+                document.getElementById("galleryImage2").src = images[2] || images[0] || "https://placehold.co/400x200?text=No+Image";
+                document.getElementById("galleryImage3").src = images[3] || images[0] || "https://placehold.co/400x200?text=No+Image";
+
+                // Features
+                const features = p.features || p.amenities || [];
+                document.getElementById("listingFeatures").innerHTML = features.length > 0
+                    ? features.map(f => '<span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-2" style="font-size:0.8rem;">' + f + '</span>').join('')
+                    : '<span class="text-muted">No features listed.</span>';
+
+                // Nearby
+                const nearby = p.nearby || p.nearbyPlaces || [];
+                document.getElementById("listingNearby").innerHTML = nearby.length > 0
+                    ? nearby.map(n => '<span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-3 py-2" style="font-size:0.8rem;">' + n + '</span>').join('')
+                    : '<span class="text-muted">No nearby facilities listed.</span>';
+
+                loading.classList.add("d-none");
+                content.classList.remove("d-none");
+
+                // Load AI features
+                PropertyDetailsAI.init(p, allProps);
+
+                // Track recently viewed
+                trackRecentlyViewed(p);
+
             } catch (e) {
-                console.error("Failed to parse sessionStorage properties", e);
-            }
-
-            const p = properties.find(item => item.id === id);
-
-            if (!p) {
+                console.error("Error loading property:", e);
                 loading.classList.add("d-none");
                 errorBox.classList.remove("d-none");
-                return;
             }
-
-            // Populate DOM
-            document.title = `${p.title} - NestFinder AI`;
-            document.getElementById("listingTitle").textContent = p.title;
-            document.getElementById("listingPrice").textContent = p.priceDisplay;
-            document.getElementById("listingLocation").textContent = p.location;
-            document.getElementById("listingAreaSize").textContent = p.areaSize;
-            document.getElementById("listingDescription").textContent = p.description;
-
-            // Specifications
-            document.getElementById("listingBeds").textContent = p.bedrooms;
-            document.getElementById("listingBaths").textContent = p.bathrooms;
-            document.getElementById("listingSizeSpec").textContent = p.areaSize;
-            document.getElementById("listingType").textContent = p.propertyType;
-
-            // Badges
-            const purposeBadge = document.getElementById("listingPurposeBadge");
-            purposeBadge.textContent = `For ${p.purpose}`;
-            if (p.purpose === "Rent") {
-                purposeBadge.className = "badge bg-info text-dark text-uppercase px-3 py-2 rounded-pill fw-bold mb-2";
-            } else {
-                purposeBadge.className = "badge bg-success text-white text-uppercase px-3 py-2 rounded-pill fw-bold mb-2";
-            }
-
-            // Images
-            document.getElementById("mainImage").src = p.carouselImages[0];
-            document.getElementById("galleryImage1").src = p.carouselImages[1];
-            document.getElementById("galleryImage2").src = p.carouselImages[2];
-            document.getElementById("galleryImage3").src = p.carouselImages[3];
-
-            // Features List
-            const featuresContainer = document.getElementById("listingFeatures");
-            featuresContainer.innerHTML = p.features.map(f => `
-                <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill font-monospace px-3 py-2" style="font-size: 0.8rem;">
-                    ${f}
-                </span>
-            `).join('');
-
-            // Nearby List
-            const nearbyContainer = document.getElementById("listingNearby");
-            nearbyContainer.innerHTML = p.nearby.map(n => `
-                <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill font-monospace px-3 py-2" style="font-size: 0.8rem;">
-                    ${n}
-                </span>
-            `).join('');
-
-            // Toggle views
-            loading.classList.add("d-none");
-            content.classList.remove("d-none");
         }
 
         function initBookingForm() {
             const form = document.getElementById("bookingForm");
             const success = document.getElementById("bookingSuccess");
-
             if (!form) return;
-
             form.addEventListener("submit", (e) => {
                 e.preventDefault();
-                
-                // Hide form inputs and submit button
                 form.classList.add("d-none");
                 success.classList.remove("d-none");
             });
         }
+
+        function saveCurrentProperty() {
+            if (!_savedProperty) return;
+            let saved = JSON.parse(localStorage.getItem("nf_saved_properties") || "[]");
+            const key = _savedProperty.firebaseKey || _savedProperty.id;
+            if (!saved.some(s => s === key)) {
+                saved.push(key);
+                localStorage.setItem("nf_saved_properties", JSON.stringify(saved));
+                alert("Property saved!");
+            } else {
+                alert("Already saved.");
+            }
+        }
+
+        function shareCurrentProperty() {
+            if (!_savedProperty) return;
+            const url = window.location.href;
+            if (navigator.share) {
+                navigator.share({ title: _savedProperty.title || "Property", url: url });
+            } else {
+                navigator.clipboard.writeText(url).then(() => alert("Link copied!")).catch(() => prompt("Copy this link:", url));
+            }
+        }
+
+        function trackRecentlyViewed(prop) {
+            let viewed = JSON.parse(localStorage.getItem("nf_recently_viewed") || "[]");
+            const key = prop.firebaseKey || prop.id;
+            viewed = viewed.filter(v => v !== key);
+            viewed.unshift(key);
+            if (viewed.length > 20) viewed = viewed.slice(0, 20);
+            localStorage.setItem("nf_recently_viewed", JSON.stringify(viewed));
+        }
+
+        function formatPrice(num) {
+            num = Number(num);
+            if (isNaN(num)) return "N/A";
+            if (num >= 10000000) return (num / 10000000).toFixed(1) + " Cr";
+            if (num >= 100000) return (num / 100000).toFixed(1) + " Lac";
+            return num.toLocaleString();
+        }
     </script>
-<script src="ai-chatbot.js"></script>
 <script src="js/navbar.js"></script>
 </body>
 </html>

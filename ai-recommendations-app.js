@@ -9,8 +9,6 @@
  * 
  * No mock data. No dummy listings. No fake statistics.
  */
-console.log("[NestFinder] 100% Firebase-powered AI Recommendations v3.0");
-
 document.addEventListener("DOMContentLoaded", async () => {
   // ========================================================================
   // 1. DATA SOURCES — Everything comes from Firebase
@@ -372,8 +370,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   async function initializeData() {
     try {
       firebaseProperties = (await API.fetchAll()).filter(function(p) { return p.status !== 'Disabled'; });
-      console.log(`[NestFinder] Loaded ${firebaseProperties.length} properties from Firebase`);
-
       // Build all data structures from Firebase
       AREA_DATABASE = buildAreaDatabase(firebaseProperties);
       AI_PROPERTIES = buildAIProperties(firebaseProperties);
@@ -390,7 +386,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
       });
 
-      console.log(`[NestFinder] Built ${AREA_DATABASE.length} areas, ${AI_PROPERTIES.length} AI properties`);
     } catch (err) {
       console.error("[NestFinder] Failed to load from Firebase:", err);
       firebaseProperties = [];

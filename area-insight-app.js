@@ -16,8 +16,6 @@
 (function () {
   "use strict";
 
-  console.log("[NestFinder] Area Insights Engine v1.0 — 100% Firebase-powered");
-
   // ==================================================================
   // 1. CONFIG
   // ==================================================================
@@ -118,7 +116,6 @@ Respond with ONLY a JSON object: { "summary": "your summary here" }`;
     ref.once("value", (snap) => {
       handleData(snap, (filtered) => {
         const isFiltered = filterState.city || filterState.purpose;
-        console.log("[NestFinder] Initial load:", cachedProperties.length, "properties", isFiltered ? "(filtered to " + filtered.length + ")" : "");
         onChange(filtered);
         showLoading(false);
       });
@@ -1062,6 +1059,10 @@ Respond with ONLY a JSON object: { "summary": "your summary here" }`;
     const summary = await generateAISummary(properties, cachedAreas);
 
     renderAll(properties, cachedAreas, summary);
+    // Initialize enhanced area intelligence
+    if (window.AreaIntelligenceEnhanced) {
+      AreaIntelligenceEnhanced.init(properties);
+    }
     if (!skipLoading) showLoading(false);
   }
 

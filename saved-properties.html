@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Saved Properties – NestFinder AI</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="css/ai-features.css">
+</head>
+<body>
+  <div id="navbar-root"></div>
+  <div style="max-width:1000px;margin:0 auto;padding:120px 1rem 3rem">
+    <h2 style="font-weight:800;margin-bottom:1.5rem"><i class="bi bi-bookmark-fill me-2" style="color:#f59e0b"></i>Saved Properties</h2>
+    <div id="savedList">
+      <div class="text-center py-5">
+        <div class="spinner-border text-warning" role="status"></div>
+        <p class="text-muted mt-2">Loading...</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/auth-shared.js"></script>
+  <script src="js/properties-shared.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      const list = document.getElementById("savedList");
+      try {
+        const savedKeys = JSON.parse(localStorage.getItem("nf_saved_properties") || "[]");
+        if (savedKeys.length === 0) {
+          list.innerHTML = '<div class="text-center py-5 text-muted"><i class="bi bi-bookmark" style="font-size:3rem;opacity:0.2;display:block;margin-bottom:0.5rem"></i>No saved properties.<br><a href="property.html" style="color:#f59e0b">Browse properties</a></div>';
+          return;
+        }
+        const allProps = await NestFinderAPI.fetchAll();
+        const saved = allProps.filter(p => savedKeys.includes(p.firebaseKey || p.id));
+
+        if (saved.length === 0) {
+          list.innerHTML = '<div class="text-center py-5 text-muted">Saved properties not found.</div>';
+          return;
+        }
+
+        const formatPrice = (n) => {
+          n = Number(n); if (isNaN(n)) return "N/A";
+          if (n >= 10000000) return "PKR " + (n / 10000000).toFixed(1) + " Cr";
+          if (n >= 100000) return "PKR " + (n / 100000).toFixed(1) + " Lac";
+          return "PKR " + n.toLocaleString();
+        };
+
+        list.innerHTML = `<div class="row g-3">${saved.map(p => {
+          const id = p.firebaseKey || p.id;
+          const img = (p.images && p.images[0]) || (p.carouselImages && p.carouselImages[0]) || "https://placehold.co/600x400?text=Property";
+          return `<div class="col-md-4 col-6">
+            <div class="ai-feature-card" onclick="window.location.href='listing.html?id=${id}'" style="cursor:pointer;text-align:left;padding:0;overflow:hidden">
+              <div style="height:140px;background-image:url('${img}');background-size:cover;background-position:center"></div>
+              <div style="padding:0.85rem">
+                <div style="font-weight:700;color:#f59e0b">${formatPrice(p.price)}</div>
+                <div style="font-size:0.85rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.title || "Property"}</div>
+                <small style="color:rgba(255,255,255,0.4)">${p.location || ""}</small>
+              </div>
+            </div>
+          </div>`;
+        }).join("")}</div>`;
+      } catch (e) {
+        list.innerHTML = '<div class="text-center py-5 text-muted">Error loading saved properties.</div>';
+      }
+    });
+  </script>
+  <script src="js/navbar.js"></script>
+</body>
+</html>

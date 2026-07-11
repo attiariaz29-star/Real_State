@@ -2,7 +2,7 @@
    AI RECOMMENDATIONS – BLACK & YELLOW THEME
    NestFinder AI Intelligence Dashboard
    ============================================ */
- 
+
 /* ---- HERO ---- */
 .ai-hero {
   position: relative;
@@ -85,7 +85,6 @@
 .pref-select option { color: #000000; background: #fff8e1; }
 .pref-select:focus  { outline: none; border-color: #f59e0b; box-shadow: 0 0 0 3px rgba(245,158,11,0.2); }
 
-/* Run AI Button — Yellow CTA */
 #runAiBtn {
   background: linear-gradient(135deg, #f59e0b, #d97706) !important;
   border: none !important;
@@ -141,7 +140,7 @@
 }
 .section-sub { color: var(--text-muted); font-size: 0.95rem; margin: 0; }
 
-/* Filter Pills — Yellow Theme */
+/* Filter Pills */
 .filter-pill {
   padding: 0.4rem 1.1rem;
   border: 1.5px solid var(--border-gold);
@@ -163,6 +162,7 @@
   background: var(--bg-card);
   border: 1.5px solid var(--border-gold-subtle);
   border-radius: 20px; overflow: hidden;
+  box-shadow: var(--shadow-sm);
   transition: transform 0.4s cubic-bezier(0.165,0.84,0.44,1), box-shadow 0.4s, border-color 0.3s;
   cursor: pointer; height: 100%; display: flex; flex-direction: column;
 }
@@ -375,6 +375,7 @@
 .compare-panel {
   background: var(--bg-card); border: 1.5px solid var(--border-gold-subtle);
   border-radius: 24px; padding: 2rem;
+  box-shadow: var(--shadow-sm);
   transition: border-color 0.3s;
 }
 .vs-badge {
@@ -385,7 +386,6 @@
   border-radius: 50%; box-shadow: 0 4px 14px rgba(245,158,11,0.4);
 }
 
-/* Compare run button */
 #runCompareBtn {
   background: linear-gradient(135deg, #f59e0b, #d97706) !important;
   border: none !important; color: #000 !important; font-weight: 700 !important;
@@ -586,22 +586,17 @@
   .section-hdr { flex-direction: column; }
   .pref-wizard .row { justify-content: center; }
 }
-/* ─── Section Container Shadows (theme-aware) ─── */
-.ai-prop-card {
-    box-shadow: var(--shadow-sm);
-}
+
+/* ---- SECTION SHADOWS (theme-aware) ---- */
 #market .row.g-4.align-items-center {
     box-shadow: var(--shadow-sm);
     border-radius: 24px;
-}
-#compare .compare-panel {
-    box-shadow: var(--shadow-sm);
 }
 #sell .compare-panel {
     box-shadow: var(--shadow-sm);
 }
 
-/* ─── Add Property hover → yellow border ─── */
+/* ---- ADD PROPERTY HOVER ---- */
 #compare .choose a > div {
     border-color: var(--border-color) !important;
     transition: border-color 0.3s ease;
@@ -610,7 +605,7 @@
     border-color: #f59e0b !important;
 }
 
-/* ─── AI Comparison View Details buttons ─── */
+/* ---- AI COMPARISON VIEW DETAILS BUTTONS ---- */
 #compareBody td a button {
     border: 1.5px solid #f59e0b !important;
     color: var(--text-body) !important;
@@ -627,11 +622,11 @@
 #mainNav .nav-link.active,
 #mainNav .nav-link:focus,
 #mainNav .nav-link:hover {
-    color: #fbbf24 !important; /* yellow theme */
+    color: #fbbf24 !important;
     background: transparent !important;
 }
 
-/* ─── Footer — black bg, static colors ─── */
+/* ---- FOOTER OVERRIDES ---- */
 .nf-footer {
   background: #000 !important;
   color: rgba(255,255,255,0.75) !important;
@@ -641,14 +636,14 @@
 .nf-footer .footer-brand .brand-gold { color: #f59e0b !important; }
 .nf-footer .footer-desc { color: rgba(255,255,255,0.6) !important; }
 .nf-footer .social-links a { color: rgba(255,255,255,0.5) !important; }
-.nf-footer .social-links a:hover { color: #f59e0b !important; }
-.nf-footer h3 { color: #fff !important; }
+.nf-footer .social-links a:hover { color: #000 !important; }
+.nf-footer h3 { color: #f59e0b !important; }
 .nf-footer .footer-links a,
-.nf-footer a { color: rgba(255,255,255,0.6) !important; }
+.nf-footer a { color: rgba(255,255,255,0.65) !important; }
 .nf-footer .footer-links a:hover,
 .nf-footer a:hover { color: #f59e0b !important; }
-.nf-footer .footer-contact li,
-.nf-footer .footer-contact i { color: rgba(255,255,255,0.6) !important; }
+.nf-footer .footer-contact li { color: rgba(255,255,255,0.6); }
+.nf-footer .footer-contact i { color: #f59e0b; }
 .nf-footer .copyright { color: rgba(255,255,255,0.4) !important; }
 [data-bs-theme="dark"] .nf-footer {
   border: 1px solid rgba(245,158,11,0.12);
@@ -657,4 +652,3 @@
   border: 2px solid rgba(245,158,11,0.15);
   min-height: 100vh;
 }
- 
