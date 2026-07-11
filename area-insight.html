@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="area-insight.css">
   <link rel="stylesheet" href="css/ai-features.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 </head>
 <body>
 
@@ -229,6 +230,31 @@
           </div>
         </div>
 
+        <!-- Card: Property Map -->
+        <div class="ai-insight-card full ai-animate" id="cardPropertyMap">
+          <div class="ai-insight-hdr">
+            <i class="bi bi-geo-alt-fill"></i>
+            <h3>Property Map</h3>
+            <span class="badge bg-warning text-dark" id="mapCount">0 properties</span>
+          </div>
+          <div id="propertyMapBody">
+            <div class="p-3">
+              <div class="row g-2 mb-3">
+                <div class="col">
+                  <input type="text" id="mapCityInput" class="form-control rounded-pill" placeholder="Type a city name (e.g. Karachi, Lahore, Islamabad)" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);color:#fff;">
+                </div>
+                <div class="col-auto">
+                  <button id="mapSearchBtn" class="btn btn-warning rounded-pill px-4 fw-semibold">
+                    <i class="bi bi-search me-1"></i> Show on Map
+                  </button>
+                </div>
+              </div>
+              <div id="leafletMap" style="height:420px;border-radius:16px;border:1px solid rgba(245,158,11,0.2);z-index:1;"></div>
+              <div id="mapStatus" class="text-center mt-2" style="font-size:0.82rem;color:var(--text-muted-light);">Enter a city name and click "Show on Map" to see property locations</div>
+            </div>
+          </div>
+        </div>
+
       </div><!-- /insight-grid -->
 
       <!-- ========== ENHANCED AREA INTELLIGENCE ========== -->
@@ -434,6 +460,8 @@
     }
   })();
   </script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="js/area-insight-map.js"></script>
 <script src="js/navbar.js"></script>
 </body>
 </html>
