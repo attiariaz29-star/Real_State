@@ -194,27 +194,44 @@ async function handleRequest(req, res) {
 
       console.log("Proxy search:", searchQuery);
 
-      var merged = [];
-      // Try Bing RSS
+      // Try Cloudflare Worker (primary search source)
       try {
-        var bing = await tryBingRss(searchQuery);
-        if (bing) merged = merged.concat(bing);
-      } catch (e) {}
+        var workerResult = await new Promise(function(resolve, reject) {
+          var workerUrl = "https://nestfinder-search.nestfinder.workers.dev/api/search";
+          var postData = JSON.stringify({ query: searchQuery, params: params });
+          var parsed = new URL(workerUrl);
+          var opts = {
+            hostname: parsed.hostname,
+            path: parsed.pathname,
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(postData) }
+          };
+          var req = https.request(opts, function(resp) {
+            var data = "";
+            resp.on("data", function(c) { data += c; });
+            resp.on("end", function() {
+              try { resolve(JSON.parse(data)); } catch (e) { reject(e); }
+            });
+          });
+          req.on("error", reject);
+          req.setTimeout(15000, function() { req.destroy(); reject(new Error("Timeout")); });
+          req.write(postData);
+          req.end();
+        });
 
-      // Append curated property links
-      var curated = buildPropertyResults(params, userQuery);
-      merged = merged.concat(curated);
-      // Deduplicate by URL
-      var seen = {};
-      merged = merged.filter(function(r) {
-        var key = r.url || r.title;
-        if (seen[key]) return false;
-        seen[key] = true;
-        return true;
-      });
+        if (workerResult && workerResult.results && workerResult.results.length > 0) {
+          console.log("Proxy <- " + workerResult.results.length + " results (worker)");
+          sendJSON(res, 200, { results: workerResult.results.slice(0, 10) });
+          return;
+        }
+      } catch (e) {
+        console.log("Worker failed:", e.message);
+      }
 
-      console.log("Proxy <- " + merged.length + " results");
-      sendJSON(res, 200, { results: merged.slice(0, 10), _fallback: merged.length <= curated.length });
+      // Fallback: curated property links
+      console.log("Proxy <- property links (fallback)");
+      var fallbackResults = buildPropertyResults(params, userQuery);
+      sendJSON(res, 200, { results: fallbackResults.slice(0, 8), _fallback: true });
     });
     return;
   }
