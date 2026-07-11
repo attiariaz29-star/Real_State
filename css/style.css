@@ -62,7 +62,7 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Navbar styling */
 .navbar-nf {
-  background-color: black(10, 10, 11, 0.8) !important;
+  background-color: rgba(10, 10, 11, 0.8) !important;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border-color);
