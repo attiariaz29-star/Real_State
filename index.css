@@ -169,7 +169,7 @@ option {
     font-size: 0.95rem;
 }
 
-.footer-contact i {
+.nf-footer .footer-contact i {
     color: var(--primary-light);
 }
 

@@ -28,6 +28,7 @@
     <script src="js/properties-shared.js"></script>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="ai-recommendations.css">
+    <link rel="stylesheet" href="css/homepage-enhanced.css">
 
     <style>
 html { scroll-behavior: smooth; }
@@ -419,23 +420,25 @@ input::placeholder { color: rgba(254, 243, 199, 0.4); }
 .footer-brand .brand-gold { color: var(--color-yellow); }
 .footer-desc { margin-bottom: 1.5rem; max-width: 300px; }
 .nf-footer h3 {
-    color: #fff;
+    color: var(--color-yellow);
     font-size: 1rem;
     font-weight: 700;
-    margin-bottom: 1.2rem;
+    margin-bottom: 1.4rem;
     text-transform: uppercase;
     letter-spacing: 1px;
 }
 .footer-links, .footer-contact { list-style: none; padding: 0; }
 .footer-links li, .footer-contact li { margin-bottom: 0.6rem; }
 .footer-links a {
-    color: #bbb;
+    color: rgba(255,255,255,0.65);
     text-decoration: none;
-    transition: color 0.3s;
+    transition: all 0.3s;
+    display: inline-block;
+    padding: 2px 0;
 }
 .footer-links a:hover { color: var(--color-yellow); }
 .footer-contact { color: #bbb; }
-.footer-contact i { color: var(--color-yellow); }
+.nf-footer .footer-contact i { color: var(--color-yellow); }
 .social-links { display: flex; gap: 1rem; }
 .social-links a {
     width: 36px; height: 36px;
@@ -1298,6 +1301,124 @@ table.w-full { width: 100%; }
         </div>
       </section>
 
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== FEATURED PROPERTIES ========== -->
+  <section class="hp-section">
+    <div class="container">
+      <div class="text-center mb-4">
+        <h2 class="hp-section-title">Featured <span style="color:#f59e0b">Properties</span></h2>
+        <p class="hp-section-sub">Handpicked listings with AI-powered insights</p>
+      </div>
+      <div class="row g-3" id="featuredProperties"></div>
+    </div>
+  </section>
+
+  <!-- ========== BROWSE BY CITY ========== -->
+  <section class="hp-section">
+    <div class="container">
+      <div class="text-center mb-4">
+        <h2 class="hp-section-title">Browse by <span style="color:#f59e0b">City</span></h2>
+        <p class="hp-section-sub">Explore properties across Pakistan's top cities</p>
+      </div>
+      <div class="row g-3" id="browseByCity"></div>
+    </div>
+  </section>
+
+  <!-- ========== FEATURED AREAS ========== -->
+  <section class="hp-section">
+    <div class="container">
+      <div class="text-center mb-4">
+        <h2 class="hp-section-title">Featured <span style="color:#f59e0b">Areas</span></h2>
+        <p class="hp-section-sub">Most popular neighborhoods with active listings</p>
+      </div>
+      <div class="row g-3" id="featuredAreas"></div>
+    </div>
+  </section>
+
+  <!-- ========== MARKET STATISTICS ========== -->
+  <section class="hp-section">
+    <div class="container">
+      <div class="text-center mb-4">
+        <h2 class="hp-section-title">Market <span style="color:#f59e0b">Statistics</span></h2>
+        <p class="hp-section-sub">Real-time market insights from your Firebase data</p>
+      </div>
+      <div id="marketStats"></div>
+    </div>
+  </section>
+
+  <!-- ========== WHY CHOOSE ========== -->
+  <section class="hp-section">
+    <div class="container">
+      <div class="text-center mb-4">
+        <h2 class="hp-section-title">Why Choose <span style="color:#f59e0b">NestFinder AI</span></h2>
+        <p class="hp-section-sub">Pakistan's first AI-powered real estate platform</p>
+      </div>
+      <div class="row g-3" id="whyChoose"></div>
+    </div>
+  </section>
+
+  <!-- ========== TESTIMONIALS ========== -->
+  <section class="hp-section">
+    <div class="container">
+      <div class="text-center mb-4">
+        <h2 class="hp-section-title">What Our <span style="color:#f59e0b">Users Say</span></h2>
+        <p class="hp-section-sub">Trusted by home buyers, sellers, and investors</p>
+      </div>
+      <div class="row g-3" id="testimonials"></div>
+    </div>
+  </section>
+
+  <!-- ========== HOW IT WORKS ========== -->
+  <section class="hp-section">
+    <div class="container">
+      <div class="text-center mb-4">
+        <h2 class="hp-section-title">How It <span style="color:#f59e0b">Works</span></h2>
+        <p class="hp-section-sub">Find your perfect property in 4 simple steps</p>
+      </div>
+      <div class="row g-3" id="howItWorks"></div>
+    </div>
+  </section>
+
+  <!-- ========== BECOME A SELLER ========== -->
+  <section class="hp-section">
+    <div class="container">
+      <div id="becomeSeller"></div>
+    </div>
+  </section>
+
+  <!-- ========== FAQ ========== -->
+  <section class="hp-section">
+    <div class="container">
+      <div class="text-center mb-4">
+        <h2 class="hp-section-title">Frequently Asked <span style="color:#f59e0b">Questions</span></h2>
+        <p class="hp-section-sub">Everything you need to know about NestFinder AI</p>
+      </div>
+      <div class="row justify-content-center">
+        <div class="col-lg-8">
+          <div class="hp-faq-item">
+            <button class="hp-faq-question" aria-expanded="false">How does NestFinder AI work? <i class="bi bi-chevron-down"></i></button>
+            <div class="hp-faq-answer">NestFinder AI uses advanced AI to analyze property data, area insights, and market trends to provide personalized recommendations and investment scores.</div>
+          </div>
+          <div class="hp-faq-item">
+            <button class="hp-faq-question" aria-expanded="false">Is NestFinder AI free to use? <i class="bi bi-chevron-down"></i></button>
+            <div class="hp-faq-answer">Yes, browsing properties and using AI insights is completely free. Premium features for sellers are available.</div>
+          </div>
+          <div class="hp-faq-item">
+            <button class="hp-faq-question" aria-expanded="false">How accurate are the AI investment scores? <i class="bi bi-chevron-down"></i></button>
+            <div class="hp-faq-answer">Scores are computed based on real property data, location factors, and market trends processed through Groq AI for maximum accuracy.</div>
+          </div>
+          <div class="hp-faq-item">
+            <button class="hp-faq-question" aria-expanded="false">Can I list my property for sale? <i class="bi bi-chevron-down"></i></button>
+            <div class="hp-faq-answer">Absolutely! Create an account and use the "Add Property" feature to list your property with photos and details.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
 </main>
 
 <!-- ========== FOOTER ========== -->
@@ -1317,31 +1438,22 @@ table.w-full { width: 100%; }
                     <a href="#" aria-label="LinkedIn"><i class="bi bi-linkedin"></i></a>
                 </div>
             </div>
-            <div class="col-lg-2 col-md-4">
+            <div class="col-lg-2 col-md-4 offset-lg-1">
                 <h3>Navigation</h3>
                 <ul class="footer-links">
                     <li><a href="index.html">Home</a></li>
                     <li><a href="area-insight.html">Area Insights</a></li>
                     <li><a href="ai-recommendations.html">AI Picks</a></li>
                     <li><a href="property.html">Properties</a></li>
-                    <li><a href="feedback.html">Feedback</a></li>
                 </ul>
             </div>
-            <div class="col-lg-3 col-md-4">
+            <div class="col-lg-3 col-md-4 ms-lg-auto">
                 <h3>Services</h3>
                 <ul class="footer-links">
                     <li><a href="ai-recommendations.html">AI Property Match</a></li>
                     <li><a href="area-insight.html">Area Intelligence</a></li>
                     <li><a href="property.html">Browse Listings</a></li>
                     <li><a href="connect.html">Schedule Visit</a></li>
-                </ul>
-            </div>
-            <div class="col-lg-3 col-md-4">
-                <h3>Contact</h3>
-                <ul class="footer-contact">
-                    <li><i class="bi bi-geo-alt me-2"></i>Karachi, Pakistan</li>
-                    <li><i class="bi bi-envelope me-2"></i>hello@nestfinder.ai</li>
-                    <li><i class="bi bi-telephone me-2"></i>+92 300 1234567</li>
                 </ul>
             </div>
         </div>
@@ -1433,6 +1545,8 @@ table.w-full { width: 100%; }
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="js/area-data.js"></script>
 <script src="js/homepage-ai.js"></script>
+<script src="js/ai-engine.js"></script>
+<script src="js/homepage-enhanced.js"></script>
 <script src="ai-chatbot.js"></script>
 <script src="js/navbar.js"></script>
 
