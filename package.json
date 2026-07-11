@@ -1,0 +1,13 @@
+{
+  "private": true,
+  "engines": {
+    "node": "18.x"
+  },
+  "scripts": {
+    "start:proxy": "node server/duckduckgo-proxy.js",
+    "start": "node server/duckduckgo-proxy.js"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2"
+  }
+}

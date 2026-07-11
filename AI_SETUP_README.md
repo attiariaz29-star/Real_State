@@ -1,48 +1,96 @@
-# NestFinder — Real AI Setup Guide (100% FREE — no paid plan needed)
+# NestFinder — AI Setup Guide (Secure Server-Side Architecture)
 
-## AI Recommendations page — FREE setup ✅ (do this one)
+## Architecture Overview
 
-This is the AI you asked about (area matches, top picks, AI tips, market
-commentary, area compare). It now runs on **Groq's free API**, called
-directly from the browser. No Firebase billing, no credit card, no server.
+All AI calls now route through **Firebase Cloud Functions** — the Groq API key
+never touches the browser. This keeps your key secure and avoids exposing it
+in client-side JavaScript.
 
-### Setup (2 minutes)
-1. Go to **https://console.groq.com/keys**
-2. Sign up with Google/GitHub (no credit card required)
-3. Click **"Create API Key"** and copy it
-4. Open `area-insight.js`, find this line near the top:
-   ```js
-   const AI_PROVIDER_API_KEY = "PASTE_YOUR_FREE_GROQ_API_KEY_HERE";
-   ```
-5. Replace `PASTE_YOUR_FREE_GROQ_API_KEY_HERE` with your copied key (keep the quotes), save the file.
-6. Open `ai-recommendations.html` in a browser (or upload the whole folder to your hosting) — done. Every score, reason, tip, and market summary is now a real, freshly-generated AI response.
+```
+Browser → Firebase Cloud Function (callGroq) → Groq API
+           [GROQ_API_KEY stored as Firebase Secret]
+```
 
-### Is this really free?
-Yes. Groq's free tier does not require billing details, and if you ever
-exceed the free request limit it simply returns an error (not a charge).
-Since the key lives in your browser's JavaScript, anyone who views your
-page source could technically see it and use your free quota — that's an
-acceptable trade-off for a free/student/personal project. If you later
-want the key fully hidden server-side, you'd need a small backend (the
-optional `aiRecommendations` Cloud Function in `functions/index.js` does
-this, but needs Firebase's paid Blaze plan — **not required** for the
-setup above to work).
+## ONE-TIME SETUP (Firebase Cloud Functions)
 
----
+### 1. Install Firebase CLI
+```bash
+npm install -g firebase-tools
+```
 
-## Property search bar (property.html) — now also real AI ✅
+### 2. Login to Firebase
+```bash
+firebase login
+```
 
-The search box on `property.html` now calls Groq's free API directly
-from the browser too (same key/model as the AI Recommendations page and
-the site-wide chat widget) — no more paid Firebase Blaze deployment or
-OpenAI key required. Every filter it fills in (type, beds, baths, sale/
-rent, budget tier, price range) and the one-line reply are generated
-fresh by the real AI for each search. The old local keyword parser
-(`parseAIQuery`) is kept only as a last-resort fallback if the AI call
-fails (e.g. you're offline or hit the free-tier rate limit) — labeled
-"offline mode" in the UI so it's clear when that happens.
+### 3. Select your Firebase project
+```bash
+firebase use nestfinder-ai
+```
+(Or: `firebase use --add` to select from existing projects)
 
-The now-unused Firebase Cloud Function in `functions/index.js` is still
-in the project as an optional alternative (fully server-side, key never
-touches the browser) if you ever move to a paid Blaze plan — it isn't
-required for anything above to work.
+### 4. Set the Groq API key as a Firebase Secret
+```bash
+firebase functions:secrets:set GROQ_API_KEY
+```
+Paste your Groq API key when prompted.
+Get a free key at https://console.groq.com/keys (no credit card required).
+
+### 5. Install dependencies and deploy
+```bash
+cd functions
+npm install
+cd ..
+firebase deploy --only functions
+```
+
+### 6. Copy the deployed URL
+After deployment, the CLI will print a URL like:
+```
+https://callgroq-xxxxxxxxxx-uc.a.run.app
+```
+
+### 7. Update ai-config.js
+Open `ai-config.js` and paste the URL:
+```js
+const AI_CONFIG = {
+    model: 'llama-3.3-70b-versatile',
+    ZENSERP_FUNCTION_URL: '/api/zenserp',
+    GROQ_FUNCTION_URL: 'https://callgroq-xxxxxxxxxx-uc.a.run.app'
+};
+```
+
+### 8. (Optional) Zenserp web search
+If you want web search fallback in the AI Property Advisor:
+```bash
+firebase functions:secrets:set ZENSERP_API_KEY
+firebase deploy --only functions
+```
+Get a free Zenserp key at https://zenserp.com
+
+### 9. (Optional) OpenAI key
+The `aiRecommendations` and `aiPropertySearch` functions use OpenAI:
+```bash
+firebase functions:secrets:set OPENAI_API_KEY
+firebase deploy --only functions
+```
+
+## What changed?
+
+- **Before**: Groq API key was hardcoded in multiple frontend files
+  (`js/ai-engine.js`, `ai-chatbot.js`, `area-insight-app.js`, `area-insight.js`,
+  `ai-config.js`) and called directly from the browser — anyone viewing page
+  source could see the key.
+
+- **After**: All Groq calls go through the `callGroq` Firebase Cloud Function.
+  The API key is stored as a Firebase secret and never sent to the client.
+  The frontend sends `{ prompt, systemPrompt, temperature }` and receives
+  the exact same response shape as before — no downstream code changes needed.
+
+## Files that reference the Cloud Function
+
+- `ai-config.js` — contains `GROQ_FUNCTION_URL`
+- `js/ai-engine.js` — uses `AI_CONFIG.GROQ_FUNCTION_URL`
+- `ai-chatbot.js` — uses `AI_CONFIG.GROQ_FUNCTION_URL`
+- `area-insight-app.js` — uses `AI_CONFIG.GROQ_FUNCTION_URL`
+- `area-insight.js` — uses `AI_CONFIG.GROQ_FUNCTION_URL`

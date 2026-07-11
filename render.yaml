@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: zenserp-proxy
+    runtime: node
+    env: node
+    buildCommand: ""
+    startCommand: node server/zenserp-proxy.js
+    healthCheckPath: /
+    envVars:
+      - key: PORT
+        value: 10000

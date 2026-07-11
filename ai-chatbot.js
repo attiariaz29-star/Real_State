@@ -17,12 +17,11 @@
   "use strict";
 
   // ============================================
-  // CONFIG — reuses the same free Groq key/model
-  // already configured in area-insight.js
+  // CONFIG — proxies through the callGroq Cloud
+  // Function so the API key stays server-side.
   // ============================================
-  const AI_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions";
-  const AI_MODEL = "llama-3.3-70b-versatile";
-  const AI_KEY = "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";
+  var GROQ_FN_URL = (typeof AI_CONFIG !== "undefined" && AI_CONFIG.GROQ_FUNCTION_URL) ||
+    "https://callgroq-xxxxxxxxxx-uc.a.run.app";
 
   const SYSTEM_PROMPT = `You are "Nesty", the friendly built-in AI help assistant for NestFinder — a Pakistani real-estate website where people buy, rent, and research properties.
 
@@ -247,29 +246,22 @@ What you help with:
   }
 
   async function callAI(msgHistory) {
-    if (!AI_KEY || AI_KEY.startsWith("PASTE_")) {
-      throw new Error("AI key not configured yet.");
-    }
-    const resp = await fetch(AI_ENDPOINT, {
+    var lastMessages = msgHistory.slice(-12);
+    var combinedPrompt = lastMessages.map(function (m) { return m.role + ": " + m.content; }).join("\n");
+    var resp = await fetch(GROQ_FN_URL, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${AI_KEY}`,
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: AI_MODEL,
-        temperature: 0.6,
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          ...msgHistory.slice(-12), // keep last 12 turns for context
-        ],
+        prompt: combinedPrompt,
+        systemPrompt: SYSTEM_PROMPT,
+        temperature: 0.6
       }),
     });
     if (!resp.ok) {
-      const errText = await resp.text().catch(() => "");
-      throw new Error(`(${resp.status})`);
+      var errText = await resp.text().catch(function () { return ""; });
+      throw new Error("(" + resp.status + ")");
     }
-    const data = await resp.json();
-    return data.choices?.[0]?.message?.content?.trim() || "Sorry, I didn't get a response — please try again.";
+    var data = await resp.json();
+    return data?.choices?.[0]?.message?.content?.trim() || "Sorry, I didn't get a response — please try again.";
   }
 })();

@@ -866,30 +866,8 @@ table.w-full { width: 100%; }
 .bg-brand-500 { background: var(--color-yellow); }
 .faq-answer { transition: max-height 0.3s ease, opacity 0.3s ease; max-height: 0; opacity: 0; overflow: hidden; }
 
-/* Filter bar select styles */
-.nf-filter-select {
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(245,158,11,0.2);
-    border-radius: 0.75rem;
-    padding: 0.75rem 1rem;
-    color: #d1d5db;
-    font-size: 0.875rem;
-    outline: none;
-    cursor: pointer;
-    transition: all 0.2s;
-    appearance: auto;
-    height: 48px;
-}
-.nf-filter-select:hover { border-color: rgba(245,158,11,0.4); }
-.nf-filter-select:focus { border-color: #facc15; background: rgba(255,255,255,0.08); }
-.nf-filter-select option { background: #1a1a1a; color: #fff; }
-[data-bs-theme="light"] .nf-filter-select {
-    background: rgba(255,255,255,0.7);
-    border-color: rgba(0,0,0,0.15);
-    color: #374151;
-}
-[data-bs-theme="light"] .nf-filter-select:focus { background: rgba(255,255,255,0.9); }
-[data-bs-theme="light"] .nf-filter-select option { background: #fff; color: #1f1f1f; }
+/* Filter bar select/input styles */
+.nf-filter-select, .pref-select,
 .nf-filter-input {
     background: rgba(255,255,255,0.05);
     border: 1px solid rgba(245,158,11,0.2);
@@ -901,15 +879,25 @@ table.w-full { width: 100%; }
     transition: all 0.2s;
     height: 48px;
 }
+.nf-filter-select, .pref-select { cursor: pointer; appearance: auto; }
+.nf-filter-select:hover, .pref-select:hover,
 .nf-filter-input:hover { border-color: rgba(245,158,11,0.4); }
+.nf-filter-select:focus, .pref-select:focus,
 .nf-filter-input:focus { border-color: #facc15; background: rgba(255,255,255,0.08); }
+.nf-filter-select option, .pref-select option { background: #1a1a1a; color: #fff; }
 .nf-filter-input::placeholder { color: rgba(255,255,255,0.3); }
+[data-bs-theme="light"] .nf-filter-select,
+[data-bs-theme="light"] .pref-select,
 [data-bs-theme="light"] .nf-filter-input {
     background: rgba(255,255,255,0.7);
     border-color: rgba(0,0,0,0.15);
     color: #374151;
 }
+[data-bs-theme="light"] .nf-filter-select:focus,
+[data-bs-theme="light"] .pref-select:focus,
 [data-bs-theme="light"] .nf-filter-input:focus { background: rgba(255,255,255,0.9); }
+[data-bs-theme="light"] .nf-filter-select option,
+[data-bs-theme="light"] .pref-select option { background: #fff; color: #1f1f1f; }
 [data-bs-theme="light"] .nf-filter-input::placeholder { color: rgba(0,0,0,0.3); }
     
 /* Chat Theme Styles */
@@ -975,7 +963,42 @@ table.w-full { width: 100%; }
 [data-bs-theme="light"] .bg-brand-dark\/90 { background: rgba(249,246,238,0.95); }
 
 [data-bs-theme="dark"] .navbar { background: #000 !important; }
+[data-bs-theme="light"] .theme-toggle {
+  border-color: rgba(255,255,255,0.4) !important;
+  color: #fff !important;
+}
+[data-bs-theme="light"] .navbar-toggler-icon {
+  filter: brightness(0) invert(1);
+}
 [data-bs-theme="dark"] body { border: 1px solid rgba(245, 158, 11, 0.15); }
+
+/* Keep everything dark-themed in light mode too */
+[data-bs-theme="light"] .pref-wizard-card {
+  background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03)) !important;
+  border-color: rgba(245,158,11,0.25) !important;
+  box-shadow: 0 8px 32px 0 rgba(245,158,11,0.15), 0 0 60px rgba(245,158,11,0.05) !important;
+}
+[data-bs-theme="light"] .nf-filter-select,
+[data-bs-theme="light"] .pref-select,
+[data-bs-theme="light"] .nf-filter-input {
+  background: rgba(255,255,255,0.05);
+  color: #d1d5db;
+  border-color: rgba(245,158,11,0.2);
+}
+[data-bs-theme="light"] .nf-filter-select option,
+[data-bs-theme="light"] .pref-select option {
+  background: #1a1a1a;
+  color: #fff;
+}
+[data-bs-theme="light"] .nf-filter-input::placeholder {
+  color: rgba(255,255,255,0.3);
+}
+.pref-wizard-card {
+  background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(245,158,11,0.25);
+  box-shadow: 0 8px 32px 0 rgba(245,158,11,0.15), 0 0 60px rgba(245,158,11,0.05);
+}
 
 .advisor-hero-wrap {
   background: rgba(255,255,255,0.04);
@@ -1333,7 +1356,7 @@ table.w-full { width: 100%; }
 
                 <!-- Filter Search Bar (Zameen.com style) -->
                 <div class="pref-wizard mt-4">
-                    <div class="glass-card rounded-2xl p-3" style="background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02)); backdrop-filter: blur(24px); border: 1px solid rgba(245,158,11,0.25); box-shadow: 0 8px 32px 0 rgba(245,158,11,0.15), 0 0 60px rgba(245,158,11,0.05);">
+                    <div class="glass-card rounded-2xl p-3 pref-wizard-card">
                         <div class="row g-2 align-items-center">
                             <div class="col-auto">
                                 <select id="nf-filter-purpose" class="pref-select" style="min-width:110px;">
@@ -1370,7 +1393,7 @@ table.w-full { width: 100%; }
                                 </select>
                             </div>
                             <div class="col-auto flex-fill" style="min-width:160px;">
-                                <input type="text" id="nf-filter-budget" placeholder="Budget (e.g. 50 lakh, 1-2 crore)" class="pref-select w-100" style="background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.3); color: white; border-radius: 50px; padding: 0.5rem 1rem; backdrop-filter: blur(10px);">
+                                <input type="text" id="nf-filter-budget" placeholder="Budget (e.g. 50 lakh, 1-2 crore)" class="pref-select w-100" style="height: 48px;">
                             </div>
                             <div class="col-auto">
                                 <button id="nf-search-btn" onclick="processSearch()" class="btn btn-primary rounded-pill px-4 fw-semibold" style="white-space:nowrap;">
@@ -1429,6 +1452,7 @@ table.w-full { width: 100%; }
               <button class="filter-pill active nf-chip nf-chip-active" data-filter="all">All</button>
               <button class="filter-pill nf-chip" data-filter="buy">Buy</button>
               <button class="filter-pill nf-chip" data-filter="rent">Rent</button>
+              <button class="filter-pill nf-chip" data-filter="market"><i class="fa-solid fa-globe me-1"></i>Market</button>
             </div>
           </div>
 

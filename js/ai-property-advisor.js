@@ -144,30 +144,92 @@
     );
   }
 
-  function searchWeb(params) {
-    return fetch(ZENSERP_FN_URL, {
+  function searchDuckDuckGo(query) {
+    var proxyUrl = (typeof AI_CONFIG !== "undefined" && AI_CONFIG.ZENSERP_FUNCTION_URL) || "http://localhost:3001/api/zenserp";
+    return fetch(proxyUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        query: params.query || "",
-        params: params
-      })
+      body: JSON.stringify({ query: query, params: {} })
     })
       .then(function (res) {
-        if (!res.ok) throw new Error("Search service error: " + res.status);
+        if (!res.ok) throw new Error("Local proxy error: " + res.status);
         return res.json();
       })
       .then(function (data) {
-        if (!data || !Array.isArray(data.results)) return [];
-        return data.results.map(function (r) {
-          r._webResult = true;
-          return r;
+        if (data && Array.isArray(data.results)) return data.results;
+        return [];
+      })
+      .catch(function (err) {
+        console.error("DuckDuckGo fallback error:", err);
+        return [];
+      });
+  }
+
+  function tryLocalProxy(query) {
+    var proxyUrl = (typeof AI_CONFIG !== "undefined" && AI_CONFIG.ZENSERP_FUNCTION_URL) || "http://localhost:3001/api/zenserp";
+    return fetch(proxyUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query: query, params: {} })
+    })
+    .then(function (res) {
+      if (!res.ok) throw new Error("Proxy error: " + res.status);
+      return res.json();
+    })
+    .then(function (data) {
+      if (data && Array.isArray(data.results)) return data.results;
+      return [];
+    })
+    .catch(function (err) {
+      console.error("Local proxy failed, trying DuckDuckGo fallback:", err);
+      return searchDuckDuckGo(query);
+    });
+  }
+
+  function searchWeb(params) {
+    var zenserpUrl = (typeof AI_CONFIG !== "undefined" && AI_CONFIG.ZENSERP_DIRECT_URL) || "https://app.zenserp.com/api/v2/search";
+    var apiKey = (typeof AI_CONFIG !== "undefined" && AI_CONFIG.ZENSERP_API_KEY) || "7c138bd0-7d35-11f1-aee8-ffbee26008df";
+    var query = params.query || buildWebSearchQuery(params);
+
+    return fetch(zenserpUrl + "?q=" + encodeURIComponent(query) + "&apikey=" + apiKey + "&num=6")
+      .then(function (res) {
+        if (!res.ok) throw new Error("Zenserp error: " + res.status);
+        return res.json();
+      })
+      .then(function (data) {
+        if (!data || !Array.isArray(data.organic)) return [];
+        return data.organic.slice(0, 6).map(function (r) {
+          var rawUrl = r.url || r.destination || "";
+          var hostname = "";
+          try { hostname = new URL(rawUrl).hostname; } catch (e) { hostname = ""; }
+          return {
+            title: r.title || "",
+            url: rawUrl,
+            source: hostname,
+            description: r.description || r.snippet || "",
+            _webResult: true
+          };
         });
       })
       .catch(function (err) {
-        console.error("Web search error:", err);
-        return [];
+        console.error("Zenserp failed:", err);
+        return tryLocalProxy(query);
       });
+  }
+
+  function buildWebSearchQuery(params) {
+    var parts = [];
+    var SEARCH_SITES = ["zameen.com", "graana.com", "agency21.com", "lamudi.pk"];
+    var siteFilter = SEARCH_SITES.map(function (s) { return "site:" + s; }).join(" OR ");
+    if (params.type && params.type !== "all" && params.type !== "") parts.push('"' + params.type + '"');
+    if (params.bedrooms > 0) parts.push(params.bedrooms + " bedroom");
+    if (params.area) parts.push('"' + params.area + '"');
+    if (params.city) parts.push('"' + params.city + '"');
+    if (params.maxPrice > 0) parts.push('"' + formatPrice(params.maxPrice) + '"');
+    if (params.minPrice > 0) parts.push('"' + formatPrice(params.minPrice) + '"');
+    if (params.bathrooms > 0) parts.push(params.bathrooms + " bathroom");
+    if (parts.length === 0) parts.push("property for sale");
+    return siteFilter + " " + parts.join(" ");
   }
 
   function webResultToCard(r) {
@@ -220,6 +282,83 @@
     addMessage("bot", html);
   }
 
+  function simpleQueryParser(userQuery) {
+    var q = userQuery.toLowerCase().trim();
+    var params = {
+      query: userQuery,
+      minPrice: 0, maxPrice: 0, city: "", area: "",
+      type: "", bedrooms: 0, bathrooms: 0, category: "", goal: "",
+      reply: ""
+    };
+
+    // City
+    if (/karachi|khi/i.test(q)) params.city = "Karachi";
+    else if (/lahore/i.test(q)) params.city = "Lahore";
+    else if (/islamabad|rawalpindi/i.test(q)) params.city = "Islamabad";
+
+    // Area
+    var areas = ["dha", "gulshan", "gulberg", "clifton", "bahria", "f-?10", "f-?11", "f-?7", "f-?8", "e-?11", "saddar", "defence"];
+    for (var i = 0; i < areas.length; i++) {
+      var re = new RegExp(areas[i], "i");
+      if (re.test(q)) { params.area = areas[i].replace(/[-\?]/g, "").toUpperCase(); break; }
+    }
+
+    // Type
+    if (/(flat|apartment)/i.test(q)) params.type = "Apartment";
+    else if (/villa/i.test(q)) params.type = "Villa";
+    else if (/(plot|land)/i.test(q)) params.type = "Plot";
+    else if (/commercial|shop|office/i.test(q)) params.type = "Commercial";
+    else if (/(house|home|bungalow)/i.test(q)) params.type = "House";
+
+    // Category
+    if (/(rent|rental|lease)/i.test(q)) params.category = "For Rent";
+    else if (/(buy|purchase|sale|for sale)/i.test(q)) params.category = "For Sale";
+
+    // Bedrooms
+    var bedMatch = q.match(/(\d+)\s*bed(?:room)?/);
+    if (bedMatch) params.bedrooms = parseInt(bedMatch[1], 10);
+
+    // Bathrooms
+    var bathMatch = q.match(/(\d+)\s*bath(?:room)?/);
+    if (bathMatch) params.bathrooms = parseInt(bathMatch[1], 10);
+
+    // Budget
+    var budgetPatterns = [
+      [/under\s+(\d+\.?\d*)\s*(?:crore|cror)/i, function(m) { params.maxPrice = parseFloat(m[1]) * 10000000; }],
+      [/under\s+(\d+\.?\d*)\s*(?:lakh|lac)/i, function(m) { params.maxPrice = parseFloat(m[1]) * 100000; }],
+      [/(?:above|over|more than)\s+(\d+\.?\d*)\s*(?:crore|cror)/i, function(m) { params.minPrice = parseFloat(m[1]) * 10000000; }],
+      [/(?:above|over|more than)\s+(\d+\.?\d*)\s*(?:lakh|lac)/i, function(m) { params.minPrice = parseFloat(m[1]) * 100000; }],
+      [/(\d+\.?\d*)\s*(?:crore|cror)\s*(?:to|-)\s*(\d+\.?\d*)\s*(?:crore|cror)/i, function(m) { params.minPrice = parseFloat(m[1]) * 10000000; params.maxPrice = parseFloat(m[2]) * 10000000; }],
+      [/(\d+\.?\d*)\s*(?:lakh|lac)\s*(?:to|-)\s*(\d+\.?\d*)\s*(?:lakh|lac)/i, function(m) { params.minPrice = parseFloat(m[1]) * 100000; params.maxPrice = parseFloat(m[2]) * 100000; }],
+      [/(\d+\.?\d*)\s*(?:crore|cror)(?!\s*(?:to|-))/i, function(m) { var v = parseFloat(m[1]) * 10000000; params.minPrice = Math.round(v * 0.8); params.maxPrice = Math.round(v * 1.2); }],
+      [/(\d+\.?\d*)\s*(?:lakh|lac)(?!\s*(?:to|-))/i, function(m) { var v = parseFloat(m[1]) * 100000; params.minPrice = Math.round(v * 0.8); params.maxPrice = Math.round(v * 1.2); }]
+    ];
+    for (var j = 0; j < budgetPatterns.length; j++) {
+      var match = q.match(budgetPatterns[j][0]);
+      if (match) { budgetPatterns[j][1](match); break; }
+    }
+
+    // Goal
+    if (/invest|profit|roi|appreciation/i.test(q)) params.goal = "investment";
+    else if (/family|kids|school/i.test(q)) params.goal = "family";
+    else if (/student|university|college/i.test(q)) params.goal = "student";
+    else if (/premium|luxury|elite/i.test(q)) params.goal = "premium";
+
+    // Reply
+    var parts = [];
+    if (params.city) parts.push("in " + params.city);
+    if (params.area) parts.push(params.area);
+    if (params.type) parts.push(params.type);
+    if (params.bedrooms > 0) parts.push(params.bedrooms + " bedroom");
+    if (params.category) parts.push(params.category.replace("For ", "").toLowerCase());
+    if (params.minPrice > 0 || params.maxPrice > 0) parts.push("within budget");
+    params.reply = parts.length > 0
+      ? "Searching " + parts.join(", ") + "."
+      : "Let me search our listings.";
+
+    return params;
+  }
+
   function extractParams(userQuery) {
     var systemPrompt =
       "You are NestFinder AI's search query parser. Extract structured search parameters from the user's natural language query about Pakistani real estate. " +
@@ -252,24 +391,16 @@
       "}";
 
     return AIEngine.callGroq(userQuery, systemPrompt, 0.2).then(function (response) {
+      // If Groq fails, use simple parser
       if (!response) {
-        return {
-          query: userQuery,
-          minPrice: 0, maxPrice: 0, city: "", area: "",
-          type: "", bedrooms: 0, bathrooms: 0, category: "", goal: "",
-          reply: "I understood your request. Let me search our listings."
-        };
+        return simpleQueryParser(userQuery);
       }
       try {
         var cleaned = response.replace(/```json|```/g, "").trim();
-        return JSON.parse(cleaned);
+        var parsed = JSON.parse(cleaned);
+        return parsed;
       } catch (e) {
-        return {
-          query: userQuery,
-          minPrice: 0, maxPrice: 0, city: "", area: "",
-          type: "", bedrooms: 0, bathrooms: 0, category: "", goal: "",
-          reply: "I understood your request. Let me search our listings."
-        };
+        return simpleQueryParser(userQuery);
       }
     });
   }
@@ -586,6 +717,9 @@
       lastParams = params;
       var exactMatches = matchProperties(params);
 
+      // Always fire web search in background (auto Zenserp fallback)
+      var webSearchPromise = searchWeb(params);
+
       if (exactMatches.length > 0) {
         var topMatches = exactMatches.slice(0, 6);
         removeTypingIndicator();
@@ -598,10 +732,6 @@
         ]).then(function (results) {
           removeTypingIndicator();
           addPropertyResults(topMatches, results[0], results[1]);
-          addQuickActions([
-            { label: "Refine My Search", icon: "search", action: function () { DOM.input.focus(); } },
-            { label: "Save My Search", icon: "bookmark-star", action: handleSaveSearch }
-          ]);
           setLoading(false);
         });
       } else {
@@ -637,54 +767,38 @@
             generateNoResultsResponse(params, topAlts)
           ]).then(function (results) {
             removeTypingIndicator();
-            addPropertyResults(topAlts, results[1] ? [] : results[0], results[1] || "Here are some alternative suggestions:");
-            var nearbyQ = lastParams && lastParams.city ? "Show me properties near " + lastParams.city : "Show me all available properties";
-            addQuickActions([
-              { label: "Search Nearby Areas", icon: "geo-alt", action: function () { DOM.input.value = nearbyQ; processQuery(DOM.input.value); } },
-              { label: "Increase Budget by 10%", icon: "graph-up-arrow", action: function () { if (lastParams) { var newMax = Math.round((lastParams.maxPrice || 50000000) * 1.1); DOM.input.value = "Show me properties under PKR " + newMax; processQuery(DOM.input.value); } } },
-              { label: "Save My Search", icon: "bookmark-star", action: handleSaveSearch }
-            ]);
+            addPropertyResults(topAlts, results[1] ? [] : results[0], results[1] || "I couldn't find an exact match in our database. Showing closest alternatives:");
             setLoading(false);
           });
         } else {
-          // No Firebase matches — try Zenserp web search
+          // No Firebase matches at all — show web results directly
           removeTypingIndicator();
-          setLoading(true);
-          addTypingIndicator();
-
-          searchWeb(params).then(function (webResults) {
-            removeTypingIndicator();
-
+          webSearchPromise.then(function (webResults) {
             if (webResults.length > 0) {
-              var heading = "I found these listings on external real estate websites that match your search:";
-              addWebResults(webResults, heading);
+              addWebResults(webResults, "No matches in our database. Here are live listings from external real estate websites:");
               addQuickActions([
                 { label: "Refine My Search", icon: "search", action: function () { DOM.input.focus(); } },
                 { label: "Save My Search", icon: "bookmark-star", action: handleSaveSearch }
               ]);
             } else {
-              var noResultsMsg =
-                "We couldn't find any matching properties on our platform or trusted external websites. Please try different search criteria.";
-              addMessage("bot", '<div class="advisor-ai-text">' + noResultsMsg + "</div>");
+              addMessage("bot", '<div class="advisor-ai-text">No matches found in our database or on external websites. Try different search terms.</div>');
               addQuickActions([
                 { label: "Browse All Listings", icon: "list-ul", action: function () { DOM.input.value = "Show me all available properties"; processQuery(DOM.input.value); } },
-                { label: "Try Different City", icon: "geo-alt", action: function () { DOM.input.value = "Show me properties in Karachi"; processQuery(DOM.input.value); } },
-                { label: "Save My Search", icon: "bookmark-star", action: handleSaveSearch }
+                { label: "Try Different City", icon: "geo-alt", action: function () { DOM.input.value = "Show me properties in Karachi"; processQuery(DOM.input.value); } }
               ]);
             }
             setLoading(false);
-          }).catch(function () {
-            removeTypingIndicator();
-            var fallbackMsg =
-              "We couldn't find any matching properties on our platform or trusted external websites. Please try different search criteria.";
-            addMessage("bot", '<div class="advisor-ai-text">' + fallbackMsg + "</div>");
-            addQuickActions([
-              { label: "Browse All Listings", icon: "list-ul", action: function () { DOM.input.value = "Show me all available properties"; processQuery(DOM.input.value); } },
-              { label: "Save My Search", icon: "bookmark-star", action: handleSaveSearch }
-            ]);
-            setLoading(false);
           });
         }
+      }
+
+      // After showing Firebase results (exact or expanded), append web results if available
+      if (exactMatches.length > 0 || allAlternatives.length > 0) {
+        webSearchPromise.then(function (webResults) {
+          if (webResults.length > 0) {
+            addWebResults(webResults, "Also found on external sites (Zameen, Graana, etc.):");
+          }
+        });
       }
     }
 

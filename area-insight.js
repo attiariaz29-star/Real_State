@@ -307,29 +307,11 @@ const MARKET_INSIGHTS = {
 };
 
 // ============================================
-// REAL AI CONFIG — FREE, NO PAID PLAN NEEDED
+// AI CONFIG — routes through the callGroq Cloud
+// Function so the API key stays server-side.
 // ============================================
-// Calls Groq's free AI API directly from the browser — no Firebase Cloud
-// Functions, no Blaze billing plan required. Groq's free tier needs no
-// credit card; if you ever exceed the free quota it just pauses (returns
-// an error) instead of charging anything.
-//
-// ONE-TIME SETUP (2 minutes, totally free):
-//   1. Go to https://console.groq.com/keys
-//   2. Sign up (Google/GitHub login is fine) — no card needed
-//   3. Click "Create API Key", copy it
-//   4. Paste it below, replacing "PASTE_YOUR_FREE_GROQ_API_KEY_HERE"
-//
-// NOTE: because this key lives in browser code, anyone who views your
-// page's source can see it. That's an acceptable trade-off for a free
-// personal/student project — worst case someone else uses up your free
-// quota, you are never charged money. If you later want the key fully
-// hidden, that needs a small server (e.g. Firebase Functions on the paid
-// Blaze plan, or a free alternative like a Cloudflare Worker/Vercel
-// function) to proxy the request — not required for this to work today.
-const AI_PROVIDER_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions";
-const AI_PROVIDER_MODEL = "llama-3.3-70b-versatile";
-const AI_PROVIDER_API_KEY = "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";
+var GROQ_FN_URL = (typeof AI_CONFIG !== "undefined" && AI_CONFIG.GROQ_FUNCTION_URL) ||
+  "https://callgroq-xxxxxxxxxx-uc.a.run.app";
 
 const ANALYZE_SYSTEM_PROMPT = `You are the recommendation engine for NestFinder AI, a Pakistani real-estate platform.
 You will receive JSON with:
@@ -357,31 +339,22 @@ Respond with ONLY a raw JSON object — no markdown, no code fences — with exa
 Do not invent numbers not present in the input.`;
 
 async function callAIModel(systemPrompt, userPayload) {
-  if (!AI_PROVIDER_API_KEY || AI_PROVIDER_API_KEY.startsWith("PASTE_")) {
-    throw new Error("AI API key not set yet — open area-insight.js and paste your free Groq key (see AI_SETUP_README.md).");
-  }
-  const resp = await fetch(AI_PROVIDER_ENDPOINT, {
+  var resp = await fetch(GROQ_FN_URL, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${AI_PROVIDER_API_KEY}`,
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: AI_PROVIDER_MODEL,
+      prompt: JSON.stringify(userPayload),
+      systemPrompt: systemPrompt,
       temperature: 0.4,
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: JSON.stringify(userPayload) },
-      ],
+      responseFormat: { type: "json_object" }
     }),
   });
   if (!resp.ok) {
-    const errText = await resp.text().catch(() => "");
-    throw new Error(`AI provider error (${resp.status}): ${errText}`);
+    var errText = await resp.text().catch(function () { return ""; });
+    throw new Error("AI proxy error (" + resp.status + "): " + errText);
   }
-  const data = await resp.json();
-  const raw = data.choices?.[0]?.message?.content || "{}";
+  var data = await resp.json();
+  var raw = data.choices?.[0]?.message?.content || "{}";
   return JSON.parse(raw);
 }
 

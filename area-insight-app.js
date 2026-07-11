@@ -17,13 +17,11 @@
   "use strict";
 
   // ==================================================================
-  // 1. CONFIG
+  // 1. CONFIG — proxies through the callGroq Cloud Function
   // ==================================================================
 
-  const GROQ_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions";
-  const GROQ_MODEL = "llama-3.3-70b-versatile";
-  // User must set their own Groq API key below
-  const GROQ_API_KEY = "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";
+  var GROQ_FN_URL = (typeof AI_CONFIG !== "undefined" && AI_CONFIG.GROQ_FUNCTION_URL) ||
+    "https://callgroq-xxxxxxxxxx-uc.a.run.app";
 
   const GROQ_SYSTEM_PROMPT = `You are NestFinder AI's area intelligence analyst.
 You receive a JSON object containing real property listing data from Firebase.
@@ -367,58 +365,43 @@ Respond with ONLY a JSON object: { "summary": "your summary here" }`;
   // ==================================================================
 
   async function generateAISummary(properties, areas) {
-    if (!GROQ_API_KEY || GROQ_API_KEY.startsWith("PASTE_")) {
-      return "AI summary not available — set your Groq API key in area-insight-app.js (see AI_SETUP_README.md).";
-    }
-
     if (properties.length < 3) {
       return "Insufficient property data for AI analysis. Add at least 3 properties to generate meaningful market intelligence.";
     }
 
-    const payload = {
+    var payload = {
       totalProperties: properties.length,
       totalAreas: areas.length,
-      areas: areas.map((a) => ({
-        name: a.name,
-        city: a.city,
-        properties: a.props,
-        buyAvg: a.buyAvg,
-        rentAvg: a.rentAvg,
-        priceYoY: a.priceYoY,
-        zone: a.zone,
-        metrics: a.metrics,
-      })),
+      areas: areas.map(function (a) { return {
+        name: a.name, city: a.city, properties: a.props,
+        buyAvg: a.buyAvg, rentAvg: a.rentAvg, priceYoY: a.priceYoY,
+        zone: a.zone, metrics: a.metrics,
+      }; }),
       propertyTypes: getTypeDistribution(properties),
       purposes: getPurposeDistribution(properties),
     };
 
     try {
-      const resp = await fetch(GROQ_ENDPOINT, {
+      var resp = await fetch(GROQ_FN_URL, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${GROQ_API_KEY}`,
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: GROQ_MODEL,
+          prompt: JSON.stringify(payload),
+          systemPrompt: GROQ_SYSTEM_PROMPT,
           temperature: 0.3,
-          response_format: { type: "json_object" },
-          messages: [
-            { role: "system", content: GROQ_SYSTEM_PROMPT },
-            { role: "user", content: JSON.stringify(payload) },
-          ],
+          responseFormat: { type: "json_object" }
         }),
       });
 
       if (!resp.ok) {
-        const errText = await resp.text().catch(() => "");
-        console.warn("[NestFinder] Groq API error:", resp.status, errText);
+        var errText = await resp.text().catch(function () { return ""; });
+        console.warn("[NestFinder] Groq proxy error:", resp.status, errText);
         return "AI analysis currently unavailable. Showing data-driven insights based on your Firebase listings.";
       }
 
-      const data = await resp.json();
-      const raw = data.choices?.[0]?.message?.content || "{}";
-      const parsed = JSON.parse(raw);
+      var data = await resp.json();
+      var raw = data.choices?.[0]?.message?.content || "{}";
+      var parsed = JSON.parse(raw);
 
       if (parsed.summary === "INSUFFICIENT_DATA") {
         return "Insufficient data for a comprehensive AI summary. Add more property listings across different areas.";

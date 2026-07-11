@@ -6,12 +6,19 @@
 
 // callGroq delegated to AIEngine (loaded via ai-engine.js)
 
+// Config URLs (read from ai-config.js, fallback to local proxy for dev)
+var ZENSERP_FN_URL = (typeof AI_CONFIG !== "undefined" && AI_CONFIG.ZENSERP_FUNCTION_URL) ||
+    "http://localhost:3001/api/zenserp";
+var GROQ_FN_URL = (typeof AI_CONFIG !== "undefined" && AI_CONFIG.GROQ_FUNCTION_URL) ||
+    "http://localhost:3002/api/groq";
+
 // ============================================================
 // SECTION 2: CACHED PROPERTY LOADING — single fetch pipeline
 // ============================================================
 var _nfAllProperties = null; // cache populated once, used everywhere
 var _nfDataLoading = false;
 var _nfDataLoaders = [];
+var _nfWebResults = null; // cache for web search results
 
 function onPropertiesReady(callback) {
   if (_nfAllProperties) {
@@ -182,7 +189,7 @@ function updateRealStats(props) {
 }
 
 // ============================================================
-// SECTION 4: PROPERTY RANKING — local scoring only (no Groq)
+// SECTION 4: PROPERTY RANKING — local scoring + web market search
 // ============================================================
 function rankAndRenderProperties(props) {
   if (!props || props.length === 0) {
@@ -210,6 +217,17 @@ function rankAndRenderProperties(props) {
   });
 
   _nfAllProperties = scored;
+
+  // Also trigger web search for real market data (async, non-blocking)
+  searchMarketProperties({}).then(function(results) {
+    _nfWebResults = results;
+    // If user already clicked "Market" filter, re-render with web results
+    var activeFilter = document.querySelector('.nf-filter-chips .filter-pill.active');
+    if (activeFilter && activeFilter.dataset.filter === "market") {
+      renderWebResultCards(_nfWebResults);
+    }
+  });
+
   filterProperties("all");
 }
 
@@ -278,9 +296,23 @@ function renderPropertyCards(cards) {
 }
 
 // ============================================================
-// SECTION 4c: FILTER — All / Buy / Rent from cached data
+// SECTION 4c: FILTER — All / Buy / Rent / Market from cached data
 // ============================================================
 function filterProperties(type) {
+  if (type === "market") {
+    if (_nfWebResults && _nfWebResults.length > 0) {
+      renderWebResultCards(_nfWebResults.slice(0, 6));
+    } else {
+      var grid = document.getElementById("property-grid");
+      if (grid) grid.innerHTML = '<div class="col-12 text-center py-5 text-gray-400">Loading market data... <i class="fa-solid fa-spinner fa-spin ms-2"></i></div>';
+      // Trigger search if not yet loaded
+      searchMarketProperties({}).then(function(results) {
+        _nfWebResults = results;
+        renderWebResultCards(_nfWebResults.slice(0, 6));
+      });
+    }
+    return;
+  }
   if (!_nfAllProperties) return;
   var filtered;
   if (type === "buy") {
@@ -300,7 +332,7 @@ function filterProperties(type) {
 }
 
 // ============================================================
-// SECTION 4d: PROPERTY DETAILS MODAL
+// SECTION 4e: PROPERTY DETAILS MODAL
 // ============================================================
 var _modalProperty = null;
 var _modalGalleryIndex = 0;
@@ -479,6 +511,101 @@ document.addEventListener("keydown", function(e) {
 });
 
 // ============================================================
+// SECTION 4d: SIMPLE QUERY PARSER (no Groq needed)
+// ============================================================
+function simpleQueryParser(query) {
+  var q = query.toLowerCase().trim();
+  var params = {
+    type: "", beds: "", baths: "", category: "",
+    city: "", area: "", minPrice: 0, maxPrice: 0,
+    keywords: "", reply: ""
+  };
+
+  // City detection
+  if (/karachi|khi/i.test(q)) params.city = "Karachi";
+  else if (/lahore/i.test(q)) params.city = "Lahore";
+  else if (/islamabad|rawalpindi|bahria/i.test(q)) params.city = "Islamabad";
+
+  // Area detection
+  var areas = ["dha", "gulshan", "gulberg", "clifton", "bahria", "f-?10", "f-?11", "f-?7", "f-?8", "e-?11", "e-?7", "saddar", "defence", "sector", "phase"];
+  for (var i = 0; i < areas.length; i++) {
+    var re = new RegExp(areas[i], "i");
+    if (re.test(q)) { params.area = areas[i].replace(/[-\?]/g, "").toUpperCase(); break; }
+  }
+
+  // Property type
+  if (/(flat|apartment)/i.test(q)) params.type = "Flat";
+  else if (/villa/i.test(q)) params.type = "Villa";
+  else if (/(plot|land)/i.test(q)) params.type = "Plot";
+  else if (/commercial|shop|office/i.test(q)) params.type = "Commercial";
+  else if (/penthouse/i.test(q)) params.type = "Penthouse";
+  else if (/(house|home|bungalow)/i.test(q)) params.type = "House";
+
+  // Category (Buy/Sale or Rent)
+  if (/(rent|rental|lease)/i.test(q)) params.category = "For Rent";
+  else if (/(buy|purchase|sale|for sale)/i.test(q)) params.category = "For Sale";
+
+  // Bedrooms
+  var bedMatch = q.match(/(\d+)\s*bed(?:room)?/);
+  if (bedMatch) {
+    var b = parseInt(bedMatch[1], 10);
+    params.beds = b >= 10 ? "10+" : String(b);
+  }
+
+  // Bathrooms
+  var bathMatch = q.match(/(\d+)\s*bath(?:room)?/);
+  if (bathMatch) params.baths = String(parseInt(bathMatch[1], 10));
+
+  // Budget parsing (crore/lakh)
+  var budgetRanges = [
+    // "under X crore"
+    [/under\s+(\d+\.?\d*)\s*(?:crore|cror)/i, function(m) { params.maxPrice = parseFloat(m[1]) * 10000000; }],
+    // "under X lakh"
+    [/under\s+(\d+\.?\d*)\s*(?:lakh|lac)/i, function(m) { params.maxPrice = parseFloat(m[1]) * 100000; }],
+    // "above X crore"
+    [/(?:above|over|more than)\s+(\d+\.?\d*)\s*(?:crore|cror)/i, function(m) { params.minPrice = parseFloat(m[1]) * 10000000; }],
+    // "above X lakh"
+    [/(?:above|over|more than)\s+(\d+\.?\d*)\s*(?:lakh|lac)/i, function(m) { params.minPrice = parseFloat(m[1]) * 100000; }],
+    // "X to Y crore"
+    [/(\d+\.?\d*)\s*(?:crore|cror)\s*(?:to|-)\s*(\d+\.?\d*)\s*(?:crore|cror)/i, function(m) { params.minPrice = parseFloat(m[1]) * 10000000; params.maxPrice = parseFloat(m[2]) * 10000000; }],
+    // "X to Y lakh"
+    [/(\d+\.?\d*)\s*(?:lakh|lac)\s*(?:to|-)\s*(\d+\.?\d*)\s*(?:lakh|lac)/i, function(m) { params.minPrice = parseFloat(m[1]) * 100000; params.maxPrice = parseFloat(m[2]) * 100000; }],
+    // "X crore"
+    [/(\d+\.?\d*)\s*(?:crore|cror)(?!\s*(?:to|-))/i, function(m) { params.minPrice = parseFloat(m[1]) * 10000000 * 0.8; params.maxPrice = parseFloat(m[1]) * 10000000 * 1.2; }],
+    // "X lakh"
+    [/(\d+\.?\d*)\s*(?:lakh|lac)(?!\s*(?:to|-))/i, function(m) { params.minPrice = parseFloat(m[1]) * 100000 * 0.8; params.maxPrice = parseFloat(m[1]) * 100000 * 1.2; }]
+  ];
+  for (var j = 0; j < budgetRanges.length; j++) {
+    var match = q.match(budgetRanges[j][0]);
+    if (match) { budgetRanges[j][1](match); break; }
+  }
+
+  // Build reply
+  var replyParts = [];
+  if (params.city) replyParts.push("in " + params.city);
+  if (params.area) replyParts.push(params.area);
+  if (params.type) replyParts.push(params.type);
+  if (params.beds) replyParts.push(params.beds + " bedroom");
+  if (params.category) replyParts.push(params.category.replace("For ", "").toLowerCase());
+  if (params.minPrice > 0 || params.maxPrice > 0) {
+    if (params.maxPrice > 0 && params.minPrice === 0) replyParts.push("under budget");
+    else if (params.minPrice > 0 && params.maxPrice === 0) replyParts.push("above budget");
+    else replyParts.push("within budget");
+  }
+  params.reply = replyParts.length > 0
+    ? "Searching for " + replyParts.join(", ") + "."
+    : "Searching our listings.";
+
+  // Keywords = city + area for better matching
+  var kw = [];
+  if (params.city) kw.push(params.city);
+  if (params.area) kw.push(params.area);
+  params.keywords = kw.join(" ");
+
+  return params;
+}
+
+// ============================================================
 // SECTION 5: AI SEARCH — Real Groq + Firebase search
 // ============================================================
 async function askAI() {
@@ -505,14 +632,11 @@ async function askAI() {
   chatArea.scrollTop = chatArea.scrollHeight;
   if (input) { input.value = ""; input.focus(); }
 
-  // Bail out if no API key
-  if (!HOMEPAGE_AI.GROQ_KEY || HOMEPAGE_AI.GROQ_KEY.startsWith("gsk_")) {
-    // Check if it's a property search query vs conversational
-    const isSearch = /(?:find|look|show|search|want|need|property|apartment|villa|house|plot|rent|buy)\b/i.test(query);
-    if (isSearch) {
-      await processSearchQuery(query, chatArea, typing);
-      return;
-    }
+  // Route property searches to the AI search pipeline
+  var isSearch = /(?:find|look|show|search|want|need|property|apartment|villa|house|plot|rent|buy)\b/i.test(query);
+  if (isSearch) {
+    await processSearchQuery(query, chatArea, typing);
+    return;
   }
 
   const systemPrompt = "You are NestFinder AI, a friendly and knowledgeable real estate assistant for Pakistan's property market. You help users find properties, understand market trends, and make informed decisions across Karachi, Lahore, and Islamabad. Keep responses concise (2-4 sentences), helpful, and accurate. If the user is looking for a specific property type or location, guide them to use the search feature. Never make up specific data points you are unsure about.";
@@ -533,50 +657,40 @@ async function askAI() {
 
 // Called when user clicks a quick tag or the search button triggers a property search
 async function processSearchQuery(rawQuery, chatArea, typingIndicator) {
-  const systemPrompt = "You are the search-query parser for NestFinder. Read the user's property search and return ONLY a valid JSON object with these keys:\n{\n  \"type\": one of \"all\",\"House\",\"Apartment\",\"Villa\",\"Plot\",\"Commercial\",\"Penthouse\",\"Office\",\"Shop\",\n  \"beds\": one of \"all\",\"1\",\"2\",\"3\",\"4\",\"5\",\"6\",\"8\",\"10+\",\n  \"baths\": one of \"all\",\"1\",\"2\",\"3\",\"4\",\"5\",\"6\",\"8\",\"10+\",\n  \"category\": one of \"all\",\"For Sale\",\"For Rent\",\n  \"budget\": one of \"all\",\"Budget\",\"Premium\",\"Luxury\",\n  \"minPrice\": number (raw PKR) or 0,\n  \"maxPrice\": number (raw PKR) or 0,\n  \"keywords\": string (city/area name or leftover terms) or \"\",\n  \"reply\": a short one-sentence confirmation\n}\nConvert crore*10000000, lakh/lac*100000.";
-
-  const response = await AIEngine.callGroq(rawQuery, systemPrompt, 0.2);
-  let searchParams = null;
-  if (response) {
-    try {
-      const cleaned = response.replace(/```json|```/g, "").trim();
+  // Try Groq first, fallback to simple parser
+  var searchParams = null;
+  try {
+    var systemPrompt = "You are the search-query parser for NestFinder. Read the user's property search and return ONLY a valid JSON object with these keys:\n{\n  \"type\": one of \"all\",\"House\",\"Apartment\",\"Villa\",\"Plot\",\"Commercial\",\"Penthouse\",\"Office\",\"Shop\",\n  \"beds\": one of \"all\",\"1\",\"2\",\"3\",\"4\",\"5\",\"6\",\"8\",\"10+\",\n  \"baths\": one of \"all\",\"1\",\"2\",\"3\",\"4\",\"5\",\"6\",\"8\",\"10+\",\n  \"category\": one of \"all\",\"For Sale\",\"For Rent\",\n  \"budget\": one of \"all\",\"Budget\",\"Premium\",\"Luxury\",\n  \"minPrice\": number (raw PKR) or 0,\n  \"maxPrice\": number (raw PKR) or 0,\n  \"keywords\": string (city/area name or leftover terms) or \"\",\n  \"reply\": a short one-sentence confirmation\n}\nConvert crore*10000000, lakh/lac*100000.";
+    var response = await AIEngine.callGroq(rawQuery, systemPrompt, 0.2);
+    if (response) {
+      var cleaned = response.replace(/```json|```/g, "").trim();
       searchParams = JSON.parse(cleaned);
-    } catch (_) {}
-  }
+    }
+  } catch (_) {}
 
   // Remove typing
   if (typingIndicator) {
-    const ti = document.getElementById("ai-typing-indicator");
+    var ti = document.getElementById("ai-typing-indicator");
     if (ti) ti.remove();
   }
 
+  // Fallback to simple parser if Groq failed
   if (!searchParams) {
-    // Fallback: redirect to property page
-    const aiBubble = document.createElement("div");
-    aiBubble.className = "chat-bubble flex justify-start";
-    aiBubble.innerHTML = '<div style="background: rgba(255,255,255,0.05); backdrop-filter: blur(12px); border: 1px solid rgba(245,158,11,0.2); border-radius: 1rem 1rem 1rem 0.25rem; padding: 0.75rem 1rem; max-width: 32rem; color: #e5e7eb; font-size: 0.875rem; line-height: 1.6; box-shadow: 0 2px 15px rgba(0,0,0,0.3);"><div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; color: #facc15; font-size: 0.75rem; font-weight: 600;"><i class="fa-solid fa-robot"></i> NestFinder AI</div><span class="ai-response-text">Let me search our database for properties matching your request. <a href="property.html?search=' + encodeURIComponent(rawQuery) + '" style="color: #facc15; text-decoration: underline;">View all results</a></span></div>';
-    if (chatArea) chatArea.appendChild(aiBubble);
-    if (chatArea) chatArea.scrollTop = chatArea.scrollHeight;
-
-    // Also redirect
-    setTimeout(function() {
-      window.location.href = "property.html?search=" + encodeURIComponent(rawQuery);
-    }, 1500);
-    return;
+    searchParams = simpleQueryParser(rawQuery);
   }
 
   // Query Firebase for matching properties
   var allProps = _nfAllProperties || [];
-  const filtered = allProps.filter(function(p) {
-    if (searchParams.type !== "all" && p.type !== searchParams.type) return false;
-    if (searchParams.category !== "all" && p.category !== searchParams.category) return false;
-    if (searchParams.budget !== "all" && p.budgetCategory !== searchParams.budget) return false;
-    if (searchParams.beds !== "all") {
+  var filtered = allProps.filter(function(p) {
+    if (searchParams.type && searchParams.type !== "all" && p.type !== searchParams.type) return false;
+    if (searchParams.category && searchParams.category !== "all" && p.category !== searchParams.category) return false;
+    if (searchParams.budget && searchParams.budget !== "all" && p.budgetCategory !== searchParams.budget) return false;
+    if (searchParams.beds && searchParams.beds !== "all") {
       var b = parseInt(searchParams.beds, 10);
       if (searchParams.beds === "10+" && p.bedrooms < 10) return false;
       if (searchParams.beds !== "10+" && p.bedrooms !== b) return false;
     }
-    if (searchParams.baths !== "all") {
+    if (searchParams.baths && searchParams.baths !== "all") {
       var ba = parseInt(searchParams.baths, 10);
       if (searchParams.baths === "10+" && p.bathrooms < 10) return false;
       if (searchParams.baths !== "10+" && p.bathrooms !== ba) return false;
@@ -605,22 +719,42 @@ async function processSearchQuery(rawQuery, chatArea, typingIndicator) {
     if (hasMore) {
       bubbleContent += ' <a href="property.html?search=' + encodeURIComponent(rawQuery) + '" style="color: #facc15; text-decoration: underline;">View all</a>';
     }
-  } else {
-    // No exact matches — recommend closest
-    var closest = allProps.slice(0, 3);
-    topProps = closest;
-    bubbleContent += "I couldn't find exact matches for \"" + escapeHtml(rawQuery) + '". Here are the closest alternatives:';
-  }
-  bubbleContent += "</span></div>";
+    bubbleContent += "</span></div>";
 
-  var aiBubble = document.createElement("div");
-  aiBubble.className = "chat-bubble flex justify-start";
-  aiBubble.innerHTML = bubbleContent;
-  if (chatArea) chatArea.appendChild(aiBubble);
+    var aiBubble = document.createElement("div");
+    aiBubble.className = "chat-bubble flex justify-start";
+    aiBubble.innerHTML = bubbleContent;
+    if (chatArea) chatArea.appendChild(aiBubble);
 
-  // Show matching property cards below the chat
-  if (topProps.length > 0) {
     renderPropertyCardsBelowChat(topProps, chatArea, rawQuery);
+
+    // Also search web in background
+    searchMarketProperties(searchParams).then(function(webResults) {
+      if (webResults && webResults.length > 0) {
+        appendWebResultsBelowChat(webResults, chatArea, rawQuery, searchParams);
+      }
+    });
+  } else {
+    // No Firebase matches — auto fallback to Zenserp web search
+    bubbleContent += "I couldn't find exact matches in our database for \"" + escapeHtml(rawQuery) + '". Searching live market listings from Zameen, Graana & more...';
+    bubbleContent += "</span></div>";
+
+    var aiBubble2 = document.createElement("div");
+    aiBubble2.className = "chat-bubble flex justify-start";
+    aiBubble2.innerHTML = bubbleContent;
+    if (chatArea) chatArea.appendChild(aiBubble2);
+
+    searchMarketProperties(searchParams).then(function(webResults) {
+      if (webResults && webResults.length > 0) {
+        appendWebResultsBelowChat(webResults, chatArea, rawQuery, searchParams);
+      } else {
+        var noResultsMsg = '<div style="background: rgba(255,255,255,0.05); backdrop-filter: blur(12px); border: 1px solid rgba(245,158,11,0.2); border-radius: 1rem 1rem 1rem 0.25rem; padding: 0.75rem 1rem; max-width: 32rem; color: #e5e7eb; font-size: 0.875rem; line-height: 1.6; box-shadow: 0 2px 15px rgba(0,0,0,0.3);">No live listings found either. Try a different search.</div>';
+        var nr = document.createElement("div");
+        nr.className = "chat-bubble flex justify-start";
+        nr.innerHTML = noResultsMsg;
+        if (chatArea) chatArea.appendChild(nr);
+      }
+    });
   }
 
   if (chatArea) chatArea.scrollTop = chatArea.scrollHeight;
@@ -668,6 +802,154 @@ function renderPropertyCardsBelowChat(props, chatArea, rawQuery) {
   if (oldResults) oldResults.remove();
 
   if (chatArea) chatArea.parentNode.insertBefore(cardContainer, chatArea.nextSibling);
+}
+
+// ============================================================
+// SECTION 5b: WEB SEARCH — Real market data from Zenserp
+// ============================================================
+function buildWebSearchQuery(searchParams) {
+  var parts = [];
+  if (searchParams.type && searchParams.type !== "all") parts.push(searchParams.type);
+  if (searchParams.category && searchParams.category !== "all") parts.push(searchParams.category.toLowerCase().replace("for ", ""));
+  if (searchParams.beds && searchParams.beds !== "all") parts.push(searchParams.beds + " bedroom");
+  if (searchParams.keywords) parts.push(searchParams.keywords);
+  if (parts.length === 0) parts.push("property for sale");
+  return parts.join(" ") + " site:zameen.com OR site:graana.com OR site:agency21.com OR site:lamudi.pk";
+}
+
+function searchDuckDuckGo(query) {
+  var proxyUrl = (typeof AI_CONFIG !== "undefined" && AI_CONFIG.ZENSERP_FUNCTION_URL) || "http://localhost:3001/api/zenserp";
+  return fetch(proxyUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query: query, params: {} })
+  })
+    .then(function(res) {
+      if (!res.ok) throw new Error("Local proxy error: " + res.status);
+      return res.json();
+    })
+    .then(function(data) {
+      if (data && Array.isArray(data.results)) return data.results;
+      return [];
+    })
+    .catch(function(err) {
+      console.error("DuckDuckGo fallback error:", err);
+      return [];
+    });
+}
+
+function tryLocalProxy(query) {
+  var proxyUrl = (typeof AI_CONFIG !== "undefined" && AI_CONFIG.ZENSERP_FUNCTION_URL) || "http://localhost:3001/api/zenserp";
+  return fetch(proxyUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query: query, params: {} })
+  })
+  .then(function(res) {
+    if (!res.ok) throw new Error("Proxy error: " + res.status);
+    return res.json();
+  })
+  .then(function(data) {
+    if (data && Array.isArray(data.results)) return data.results;
+    return [];
+  })
+  .catch(function(err) {
+    console.error("Local proxy failed, trying DuckDuckGo fallback:", err);
+    return searchDuckDuckGo(query);
+  });
+}
+
+function searchMarketProperties(searchParams) {
+  var query = buildWebSearchQuery(searchParams);
+  var zenserpUrl = (typeof AI_CONFIG !== "undefined" && AI_CONFIG.ZENSERP_DIRECT_URL) || "https://app.zenserp.com/api/v2/search";
+  var apiKey = (typeof AI_CONFIG !== "undefined" && AI_CONFIG.ZENSERP_API_KEY) || "7c138bd0-7d35-11f1-aee8-ffbee26008df";
+
+  return fetch(zenserpUrl + "?q=" + encodeURIComponent(query) + "&apikey=" + apiKey + "&num=6")
+    .then(function(res) {
+      if (!res.ok) throw new Error("Zenserp error: " + res.status);
+      return res.json();
+    })
+    .then(function(data) {
+      if (!data || !Array.isArray(data.organic)) return [];
+      return data.organic.slice(0, 6).map(function(r) {
+        var rawUrl = r.url || r.destination || "";
+        var hostname = "";
+        try { hostname = new URL(rawUrl).hostname; } catch (e) { hostname = ""; }
+        return {
+          title: r.title || "",
+          url: rawUrl,
+          source: hostname,
+          description: r.description || r.snippet || "",
+          _webResult: true
+        };
+      });
+    })
+    .catch(function(err) {
+      console.error("Zenserp failed:", err);
+      return tryLocalProxy(query);
+    });
+}
+
+function appendWebResultsBelowChat(webResults, chatArea, rawQuery, searchParams) {
+  // Remove any existing web results
+  var oldWeb = document.getElementById("web-result-cards");
+  if (oldWeb) oldWeb.remove();
+
+  var webContainer = document.createElement("div");
+  webContainer.id = "web-result-cards";
+  webContainer.className = "mt-4";
+
+  var heading = document.createElement("div");
+  heading.className = "text-yellow-400 font-semibold mb-3 flex items-center gap-2";
+  heading.innerHTML = '<i class="fa-solid fa-globe"></i> Live Market Listings (from Zameen, Graana, Agency21, Lamudi)';
+  webContainer.appendChild(heading);
+
+  var grid = document.createElement("div");
+  grid.className = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4";
+
+  webResults.slice(0, 6).forEach(function(r) {
+    var hostname = r.source || "";
+    var favicon = "https://www.google.com/s2/favicons?domain=" + hostname + "&sz=32";
+    var title = r.title || "Property Listing";
+    var description = r.description || r.snippet || "";
+    var url = r.url || "#";
+
+    var card = document.createElement("div");
+    card.className = "group relative rounded-2xl overflow-hidden cursor-pointer";
+    card.style.textDecoration = "none";
+    card.style.display = "block";
+
+    card.innerHTML =
+      '<div class="absolute inset-0 bg-gradient-to-t from-brand-dark via-transparent to-transparent z-10 opacity-80"></div>' +
+      '<img src="' + favicon + '" alt="" class="absolute top-4 left-4 z-20 w-8 h-8 rounded-lg bg-white/10 p-1" onerror="this.style.display=\'none\'">' +
+      '<div class="absolute top-4 right-4 z-20 glass px-3 py-1 rounded-full text-xs font-bold text-white flex items-center gap-1">' +
+        '<i class="fa-solid fa-globe text-yellow-300"></i> ' + hostname +
+      '</div>' +
+      '<div class="absolute bottom-0 left-0 w-full p-6 z-20 transform translate-y-2 group-hover:translate-y-0 transition-transform">' +
+        '<div class="flex justify-between items-start mb-2">' +
+          '<div>' +
+            '<h3 class="text-xl font-bold text-yellow-200 truncate pr-4">' + title + '</h3>' +
+            '<p class="text-gray-300 text-sm"><i class="fa-solid fa-globe mr-1"></i> ' + hostname + '</p>' +
+          '</div>' +
+        '</div>' +
+        (description ? '<p class="text-gray-300 text-sm line-clamp-2 mb-4">' + description + '</p>' : '') +
+        '<a href="' + url + '" target="_blank" rel="noopener noreferrer" class="btn btn-warning w-100 fw-bold py-2">' +
+          '<i class="fa-solid fa-arrow-up-right-from-square me-1"></i> View on ' + hostname +
+        '</a>' +
+      '</div>';
+
+    grid.appendChild(card);
+  });
+
+  webContainer.appendChild(grid);
+
+  // Insert after the local property cards
+  var localCards = document.getElementById("search-result-cards");
+  if (localCards) {
+    localCards.parentNode.insertBefore(webContainer, localCards.nextSibling);
+  } else if (chatArea) {
+    chatArea.parentNode.insertBefore(webContainer, chatArea.nextSibling);
+  }
 }
 
 // ============================================================

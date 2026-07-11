@@ -31,6 +31,9 @@ const logger = require("firebase-functions/logger");
 
 const OPENAI_API_KEY = defineSecret("OPENAI_API_KEY");
 const ZENSERP_SECRET = defineSecret("ZENSERP_API_KEY");
+const GROQ_API_KEY = defineSecret("GROQ_API_KEY");
+
+const SEARCH_SITES = ["zameen.com", "graana.com", "agency21.com", "lamudi.pk"];
 
 const SYSTEM_PROMPT = `You are the search-query parser for NestFinder AI, a Pakistani real-estate site (Karachi, Lahore, Islamabad).
 Read the user's free-text property search (may be English, Urdu, Roman Urdu, or a mix) and return ONLY a JSON object — no prose, no markdown — with exactly these fields:
@@ -249,55 +252,88 @@ exports.aiPropertySearch = onRequest(
 );
 
 /**
- * NestFinder AI — Cloud Function: zenserpSearch
+ * NestFinder AI — Cloud Function: searchMarketData
  * ---------------------------------------------------------------
- * Receives structured search params from the AI Property Advisor,
- * builds an optimized Google search query targeting trusted real
- * estate websites, and calls the Zenserp SERP API server-side so
- * the API key is never exposed to the browser.
+ * Searches real-estate listings via Bing RSS feed + curated
+ * property links as fallback. No API key needed.
  *
- * ONE-TIME SETUP:
- *   1. firebase functions:secrets:set ZENSERP_API_KEY
- *        -> paste your Zenserp API key when prompted
- *   2. firebase deploy --only functions
+ * DEPLOY:
+ *   cd functions && npm install
+ *   cd .. && firebase deploy --only functions
  *
- * Deploy will print a URL like:
- *   https://zenserpsearch-xxxxxxxxxx-uc.a.run.app
- * Copy that URL into ZENSERP_FUNCTION_URL in ai-config.js.
+ * URL after deploy: https://searchmarketdata-xxxxxxxxxx-uc.a.run.app
+ * Copy that URL into ZENSERP_FUNCTION_URL in ai-config.js
  * ---------------------------------------------------------------
  */
 
-const SEARCH_SITES = ["zameen.com", "graana.com", "agency21.com", "lamudi.pk"];
-
-function buildWebQuery(params) {
-  var parts = [];
-  var siteFilter = SEARCH_SITES.map(function (s) { return "site:" + s; }).join(" OR ");
-
-  if (params.type && params.type !== "all" && params.type !== "") parts.push('"' + params.type + '"');
-  if (params.bedrooms > 0) parts.push(params.bedrooms + " bedroom");
-  if (params.area) parts.push('"' + params.area + '"');
-  if (params.city) parts.push('"' + params.city + '"');
-  if (params.maxPrice > 0) {
-    parts.push('"' + formatPrice(params.maxPrice) + '"');
-  }
-  if (params.minPrice > 0) {
-    parts.push('"' + formatPrice(params.minPrice) + '"');
-  }
-  if (params.bathrooms > 0) parts.push(params.bathrooms + " bathroom");
-  if (parts.length === 0) parts.push("property for sale");
-
-  return siteFilter + " " + parts.join(" ");
+function tryBingRss(searchQuery) {
+  return new Promise(function(resolve) {
+    var q = encodeURIComponent(searchQuery);
+    var bingUrl = "https://www.bing.com/search?q=" + q + "&format=rss&count=10";
+    var parsed = new URL(bingUrl);
+    var opts = {
+      hostname: parsed.hostname,
+      path: parsed.pathname + parsed.search,
+      method: "GET",
+      headers: { "User-Agent": "Mozilla/5.0" }
+    };
+    fetch(bingUrl, { headers: { "User-Agent": "Mozilla/5.0" } })
+      .then(function(r) {
+        if (!r.ok) { resolve(null); return; }
+        return r.text();
+      })
+      .then(function(data) {
+        if (!data) { resolve(null); return; }
+        try {
+          var items = [];
+          var itemRe = /<item>[\s\S]*?<title>(?:<!\[CDATA\[(.*?)\]\]>|(.*?))<\/title>[\s\S]*?<link>(?:<!\[CDATA\[(.*?)\]\]>|(.*?))<\/link>[\s\S]*?<description>(?:<!\[CDATA\[(.*?)\]\]>|(.*?))<\/description>/gi;
+          var m;
+          while ((m = itemRe.exec(data)) !== null) {
+            var title = (m[1] || m[2] || "").replace(/<[^>]+>/g, "").trim();
+            var link = (m[3] || m[4] || "").trim();
+            var desc = (m[5] || m[6] || "").replace(/<[^>]+>/g, "").trim();
+            if (!title) continue;
+            var hn = "";
+            try { hn = new URL(link).hostname.replace("www.", ""); } catch (e) {}
+            var skipWords = /calculator|wikipedia|w3schools|wikihow|mathway|what3words|quickmath|three\.com/i;
+            if (skipWords.test(hn)) continue;
+            items.push({ title: title, url: link, source: hn, description: desc.substring(0, 300), _webResult: true });
+          }
+          resolve(items.slice(0, 6));
+        } catch (e) { resolve(null); }
+      })
+      .catch(function() { resolve(null); });
+  });
 }
 
-function formatPrice(n) {
-  if (!n) return "";
-  if (n >= 10000000) return (n / 10000000).toFixed(1) + " Crore";
-  if (n >= 100000) return (n / 100000).toFixed(1) + " Lakh";
-  return n.toLocaleString();
+function buildPropertyResults(params, userQuery) {
+  var city = (params.city || "Karachi").toLowerCase();
+  var bedroomText = params.bedrooms > 0 ? params.bedrooms + " Bedroom " : "";
+  var typeLabel = params.type && params.type !== "all" ? params.type + "s" : "Properties";
+  var priceLabel = "";
+  if (params.minPrice > 0 && params.maxPrice > 0) priceLabel = " (Rs." + params.minPrice + " - Rs." + params.maxPrice + ")";
+  else if (params.minPrice > 0) priceLabel = " (Above Rs." + params.minPrice + ")";
+  else if (params.maxPrice > 0) priceLabel = " (Under Rs." + params.maxPrice + ")";
+  var results = [];
+  results.push({
+    title: bedroomText + typeLabel + " for Sale in " + city.charAt(0).toUpperCase() + city.slice(1) + " - Zameen.com",
+    url: "https://www.zameen.com/Homes/" + city + "-2-1.html" + (params.bedrooms > 0 ? "?bedrooms=l-" + params.bedrooms : ""),
+    source: "zameen.com",
+    description: "Browse " + typeLabel.toLowerCase() + " for sale in " + city + priceLabel + " on Zameen.com.",
+    _webResult: true
+  });
+  results.push({
+    title: bedroomText + typeLabel + " for Sale in " + city.charAt(0).toUpperCase() + city.slice(1) + " - OLX",
+    url: "https://www.olx.com.pk/properties/q-" + (params.type || "property") + "/?city=" + city,
+    source: "olx.com.pk",
+    description: "Find " + typeLabel.toLowerCase() + " for sale in " + city + " on OLX Pakistan.",
+    _webResult: true
+  });
+  return results;
 }
 
-exports.zenserpSearch = onRequest(
-  { secrets: [ZENSERP_SECRET], cors: true, region: "us-central1", timeoutSeconds: 30 },
+exports.searchMarketData = onRequest(
+  { cors: true, region: "us-central1", timeoutSeconds: 30 },
   async (req, res) => {
     if (req.method !== "POST") {
       res.status(405).json({ error: "Use POST" });
@@ -306,52 +342,119 @@ exports.zenserpSearch = onRequest(
 
     const params = req.body.params || {};
     const userQuery = (req.body.query || "").toString().trim();
+    var searchQuery = userQuery;
+    if (!searchQuery) {
+      var parts = [];
+      if (params.type && params.type !== "all") parts.push(params.type);
+      if (params.bedrooms > 0) parts.push(params.bedrooms + " bedroom");
+      if (params.area) parts.push(params.area);
+      if (params.city) parts.push(params.city);
+      parts.push("for sale");
+      searchQuery = parts.join(" ") || "property for sale";
+    }
 
-    if (!params && !userQuery) {
-      res.status(400).json({ error: "Missing search parameters" });
+    logger.info("Search: " + searchQuery);
+    var merged = [];
+
+    // Try Bing RSS
+    try {
+      var bing = await tryBingRss(searchQuery);
+      if (bing) merged = merged.concat(bing);
+    } catch (e) {}
+
+    // Append curated property links
+    var curated = buildPropertyResults(params, userQuery);
+    merged = merged.concat(curated);
+
+    // Deduplicate
+    var seen = {};
+    merged = merged.filter(function(r) {
+      var key = r.url || r.title;
+      if (seen[key]) return false;
+      seen[key] = true;
+      return true;
+    });
+
+    logger.info("Results: " + merged.length);
+    res.status(200).json({ results: merged.slice(0, 10) });
+  }
+);
+
+exports.zenserpSearch = exports.searchMarketData;
+
+/**
+ * NestFinder AI — Cloud Function: callGroq
+ * ---------------------------------------------------------------
+ * Proxies requests to Groq's OpenAI-compatible API so the API key
+ * never touches the browser. The frontend sends { prompt, systemPrompt, temperature }
+ * and receives the same response shape as direct Groq calls.
+ *
+ * ONE-TIME SETUP:
+ *   1. firebase functions:secrets:set GROQ_API_KEY
+ *        -> paste your Groq API key when prompted
+ *   2. firebase deploy --only functions
+ *
+ * Deploy will print a URL like:
+ *   https://callgroq-xxxxxxxxxx-uc.a.run.app
+ * Copy that URL into GROQ_FUNCTION_URL in ai-config.js.
+ * ---------------------------------------------------------------
+ */
+exports.callGroq = onRequest(
+  { secrets: [GROQ_API_KEY], cors: true, region: "us-central1", timeoutSeconds: 60 },
+  async (req, res) => {
+    if (req.method !== "POST") {
+      res.status(405).json({ error: "Use POST" });
+      return;
+    }
+
+    var body = req.body || {};
+    var prompt = body.prompt;
+    var systemPrompt = body.systemPrompt;
+    var temperature = (body.temperature != null) ? body.temperature : 0.3;
+
+    if (!prompt) {
+      res.status(400).json({ error: "Missing 'prompt' in request body" });
       return;
     }
 
     try {
-      var searchQuery = buildWebQuery(params);
-      logger.info("Zenserp search query: " + searchQuery);
+      var messages = [];
+      if (systemPrompt) {
+        messages.push({ role: "system", content: systemPrompt });
+      }
+      messages.push({ role: "user", content: prompt });
 
-      var zenserpUrl = "https://app.zenserp.com/api/v2/search?q=" +
-        encodeURIComponent(searchQuery) +
-        "&apikey=" + ZENSERP_SECRET.value() +
-        "&num=6";
+      var groqBody = {
+        model: "llama-3.3-70b-versatile",
+        temperature: temperature,
+        messages: messages,
+      };
 
-      var response = await fetch(zenserpUrl);
-      if (!response.ok) {
-        var errText = await response.text();
-        logger.error("Zenserp API error", response.status, errText);
-        res.status(502).json({ error: "External search provider error", results: [] });
-        return;
+      if (body.responseFormat) {
+        groqBody.response_format = body.responseFormat;
       }
 
-      var data = await response.json();
-
-      if (!data || !Array.isArray(data.organic)) {
-        res.status(200).json({ results: [] });
-        return;
-      }
-
-      var results = data.organic.slice(0, 6).map(function (r) {
-        var rawUrl = r.url || r.destination || "";
-        var hostname = "";
-        try { hostname = new URL(rawUrl).hostname; } catch (e) { hostname = ""; }
-        return {
-          title: r.title || "",
-          url: rawUrl,
-          source: hostname,
-          description: r.description || r.snippet || ""
-        };
+      var resp = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + GROQ_API_KEY.value(),
+        },
+        body: JSON.stringify(groqBody),
       });
 
-      res.status(200).json({ results: results });
+      if (!resp.ok) {
+        const errText = await resp.text();
+        logger.error("Groq API error", resp.status, errText);
+        res.status(502).json({ error: "Groq provider error" });
+        return;
+      }
+
+      const data = await resp.json();
+      res.status(200).json(data);
     } catch (err) {
-      logger.error("zenserpSearch failed", err);
-      res.status(500).json({ error: "Internal error", results: [] });
+      logger.error("callGroq failed", err);
+      res.status(500).json({ error: "Internal error" });
     }
   }
 );

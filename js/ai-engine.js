@@ -1,27 +1,20 @@
 const AIEngine = (function() {
-  const GROQ_KEY = "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";
-  const GROQ_MODEL = "llama-3.3-70b-versatile";
-  const GROQ_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions";
+  var GROQ_FN_URL = (typeof AI_CONFIG !== "undefined" && AI_CONFIG.GROQ_FUNCTION_URL) ||
+    "https://callgroq-xxxxxxxxxx-uc.a.run.app";
 
-  async function callGroq(prompt, systemPrompt, temperature = 0.3) {
+  async function callGroq(prompt, systemPrompt, temperature) {
     try {
-      const res = await fetch(GROQ_ENDPOINT, {
+      var res = await fetch(GROQ_FN_URL, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer " + GROQ_KEY
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: GROQ_MODEL,
-          temperature: temperature,
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: prompt }
-          ]
+          prompt: prompt,
+          systemPrompt: systemPrompt || "",
+          temperature: temperature != null ? temperature : 0.3
         })
       });
-      if (!res.ok) throw new Error("Groq API error: " + res.status);
-      const data = await res.json();
+      if (!res.ok) throw new Error("Groq proxy error: " + res.status);
+      var data = await res.json();
       return data?.choices?.[0]?.message?.content || "";
     } catch (e) {
       console.error("AIEngine.callGroq error:", e);
