@@ -15,6 +15,7 @@
         <li class="nav-item"><a class="nav-link" href="property.html" data-page="property">Properties</a></li>
         <li class="nav-item"><a class="nav-link" href="area-insight.html" data-page="area-insight">Area Insights</a></li>
         <li class="nav-item"><a class="nav-link" href="ai-recommendations.html" data-page="ai-recommendations">AI Match</a></li>
+        <li class="nav-item"><a class="nav-link" href="market-insights.html" data-page="market-insights">Market</a></li>
       </ul>
       <ul class="navbar-nav align-items-center" id="navRightItems">
         <li class="nav-item">
@@ -44,7 +45,8 @@
           </a>
           <ul class="dropdown-menu dropdown-menu-end" id="navDropdown">
             <li><a class="dropdown-item" href="acc.html"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a></li>
-            <li><a class="dropdown-item" href="#" id="navProfileLink"><i class="bi bi-person-circle me-2"></i>Profile</a></li>
+            <li><a class="dropdown-item" href="user-profile.html"><i class="bi bi-person-circle me-2"></i>Profile</a></li>
+            <li><a class="dropdown-item" href="saved-properties.html"><i class="bi bi-bookmark me-2"></i>Saved</a></li>
             <li><hr class="dropdown-divider"></li>
             <li><a class="dropdown-item" href="#" id="navLogoutLink"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
           </ul>

@@ -30,6 +30,7 @@ const { defineSecret } = require("firebase-functions/params");
 const logger = require("firebase-functions/logger");
 
 const OPENAI_API_KEY = defineSecret("OPENAI_API_KEY");
+const ZENSERP_SECRET = defineSecret("ZENSERP_API_KEY");
 
 const SYSTEM_PROMPT = `You are the search-query parser for NestFinder AI, a Pakistani real-estate site (Karachi, Lahore, Islamabad).
 Read the user's free-text property search (may be English, Urdu, Roman Urdu, or a mix) and return ONLY a JSON object — no prose, no markdown — with exactly these fields:
@@ -243,6 +244,114 @@ exports.aiPropertySearch = onRequest(
     } catch (err) {
       logger.error("aiPropertySearch failed", err);
       res.status(500).json({ error: "Internal error" });
+    }
+  }
+);
+
+/**
+ * NestFinder AI — Cloud Function: zenserpSearch
+ * ---------------------------------------------------------------
+ * Receives structured search params from the AI Property Advisor,
+ * builds an optimized Google search query targeting trusted real
+ * estate websites, and calls the Zenserp SERP API server-side so
+ * the API key is never exposed to the browser.
+ *
+ * ONE-TIME SETUP:
+ *   1. firebase functions:secrets:set ZENSERP_API_KEY
+ *        -> paste your Zenserp API key when prompted
+ *   2. firebase deploy --only functions
+ *
+ * Deploy will print a URL like:
+ *   https://zenserpsearch-xxxxxxxxxx-uc.a.run.app
+ * Copy that URL into ZENSERP_FUNCTION_URL in ai-config.js.
+ * ---------------------------------------------------------------
+ */
+
+const SEARCH_SITES = ["zameen.com", "graana.com", "agency21.com", "lamudi.pk"];
+
+function buildWebQuery(params) {
+  var parts = [];
+  var siteFilter = SEARCH_SITES.map(function (s) { return "site:" + s; }).join(" OR ");
+
+  if (params.type && params.type !== "all" && params.type !== "") parts.push('"' + params.type + '"');
+  if (params.bedrooms > 0) parts.push(params.bedrooms + " bedroom");
+  if (params.area) parts.push('"' + params.area + '"');
+  if (params.city) parts.push('"' + params.city + '"');
+  if (params.maxPrice > 0) {
+    parts.push('"' + formatPrice(params.maxPrice) + '"');
+  }
+  if (params.minPrice > 0) {
+    parts.push('"' + formatPrice(params.minPrice) + '"');
+  }
+  if (params.bathrooms > 0) parts.push(params.bathrooms + " bathroom");
+  if (parts.length === 0) parts.push("property for sale");
+
+  return siteFilter + " " + parts.join(" ");
+}
+
+function formatPrice(n) {
+  if (!n) return "";
+  if (n >= 10000000) return (n / 10000000).toFixed(1) + " Crore";
+  if (n >= 100000) return (n / 100000).toFixed(1) + " Lakh";
+  return n.toLocaleString();
+}
+
+exports.zenserpSearch = onRequest(
+  { secrets: [ZENSERP_SECRET], cors: true, region: "us-central1", timeoutSeconds: 30 },
+  async (req, res) => {
+    if (req.method !== "POST") {
+      res.status(405).json({ error: "Use POST" });
+      return;
+    }
+
+    const params = req.body.params || {};
+    const userQuery = (req.body.query || "").toString().trim();
+
+    if (!params && !userQuery) {
+      res.status(400).json({ error: "Missing search parameters" });
+      return;
+    }
+
+    try {
+      var searchQuery = buildWebQuery(params);
+      logger.info("Zenserp search query: " + searchQuery);
+
+      var zenserpUrl = "https://app.zenserp.com/api/v2/search?q=" +
+        encodeURIComponent(searchQuery) +
+        "&apikey=" + ZENSERP_SECRET.value() +
+        "&num=6";
+
+      var response = await fetch(zenserpUrl);
+      if (!response.ok) {
+        var errText = await response.text();
+        logger.error("Zenserp API error", response.status, errText);
+        res.status(502).json({ error: "External search provider error", results: [] });
+        return;
+      }
+
+      var data = await response.json();
+
+      if (!data || !Array.isArray(data.organic)) {
+        res.status(200).json({ results: [] });
+        return;
+      }
+
+      var results = data.organic.slice(0, 6).map(function (r) {
+        var rawUrl = r.url || r.destination || "";
+        var hostname = "";
+        try { hostname = new URL(rawUrl).hostname; } catch (e) { hostname = ""; }
+        return {
+          title: r.title || "",
+          url: rawUrl,
+          source: hostname,
+          description: r.description || r.snippet || ""
+        };
+      });
+
+      res.status(200).json({ results: results });
+    } catch (err) {
+      logger.error("zenserpSearch failed", err);
+      res.status(500).json({ error: "Internal error", results: [] });
     }
   }
 );

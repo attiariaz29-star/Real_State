@@ -4,40 +4,7 @@
 // lazy-loaded charts, skeleton-first rendering.
 // ============================================================
 
-// ============================================================
-// SECTION 1: AI CONFIG & GROQ API (unchanged)
-// ============================================================
-const HOMEPAGE_AI = {
-  GROQ_KEY: "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",
-  GROQ_MODEL: "llama-3.3-70b-versatile",
-  GROQ_ENDPOINT: "https://api.groq.com/openai/v1/chat/completions"
-};
-
-async function callGroq(prompt, systemPrompt, temperature = 0.3) {
-  try {
-    const res = await fetch(HOMEPAGE_AI.GROQ_ENDPOINT, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer " + HOMEPAGE_AI.GROQ_KEY
-      },
-      body: JSON.stringify({
-        model: HOMEPAGE_AI.GROQ_MODEL,
-        temperature: temperature,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: prompt }
-        ]
-      })
-    });
-    if (!res.ok) throw new Error("Groq API error: " + res.status);
-    const data = await res.json();
-    return data?.choices?.[0]?.message?.content || "";
-  } catch (e) {
-    console.error("callGroq error:", e);
-    return null;
-  }
-}
+// callGroq delegated to AIEngine (loaded via ai-engine.js)
 
 // ============================================================
 // SECTION 2: CACHED PROPERTY LOADING — single fetch pipeline
@@ -550,7 +517,7 @@ async function askAI() {
 
   const systemPrompt = "You are NestFinder AI, a friendly and knowledgeable real estate assistant for Pakistan's property market. You help users find properties, understand market trends, and make informed decisions across Karachi, Lahore, and Islamabad. Keep responses concise (2-4 sentences), helpful, and accurate. If the user is looking for a specific property type or location, guide them to use the search feature. Never make up specific data points you are unsure about.";
 
-  const response = await callGroq(query, systemPrompt, 0.5);
+  const response = await AIEngine.callGroq(query, systemPrompt, 0.5);
 
   // Remove typing indicator
   const ti = document.getElementById("ai-typing-indicator");
@@ -568,7 +535,7 @@ async function askAI() {
 async function processSearchQuery(rawQuery, chatArea, typingIndicator) {
   const systemPrompt = "You are the search-query parser for NestFinder. Read the user's property search and return ONLY a valid JSON object with these keys:\n{\n  \"type\": one of \"all\",\"House\",\"Apartment\",\"Villa\",\"Plot\",\"Commercial\",\"Penthouse\",\"Office\",\"Shop\",\n  \"beds\": one of \"all\",\"1\",\"2\",\"3\",\"4\",\"5\",\"6\",\"8\",\"10+\",\n  \"baths\": one of \"all\",\"1\",\"2\",\"3\",\"4\",\"5\",\"6\",\"8\",\"10+\",\n  \"category\": one of \"all\",\"For Sale\",\"For Rent\",\n  \"budget\": one of \"all\",\"Budget\",\"Premium\",\"Luxury\",\n  \"minPrice\": number (raw PKR) or 0,\n  \"maxPrice\": number (raw PKR) or 0,\n  \"keywords\": string (city/area name or leftover terms) or \"\",\n  \"reply\": a short one-sentence confirmation\n}\nConvert crore*10000000, lakh/lac*100000.";
 
-  const response = await callGroq(rawQuery, systemPrompt, 0.2);
+  const response = await AIEngine.callGroq(rawQuery, systemPrompt, 0.2);
   let searchParams = null;
   if (response) {
     try {
@@ -734,7 +701,7 @@ async function processSearch() {
 
   // Call Groq to extract structured params (includes AI budget parsing)
   var systemPrompt = "Extract search parameters from the user's property query. Return ONLY a valid JSON object with keys: type, beds, baths, category, city, minPrice, maxPrice, keywords. Use '' for unspecified. Convert crore*10000000, lakh*100000. For budget like '50 lakh', set minPrice=5000000; for '1-2 crore' set minPrice=10000000 maxPrice=20000000; for 'under 1 crore' set maxPrice=10000000; for 'above 5 crore' set minPrice=50000000.";
-  var response = await callGroq(query, systemPrompt, 0.2);
+  var response = await AIEngine.callGroq(query, systemPrompt, 0.2);
 
   var params = {};
   if (response) {
