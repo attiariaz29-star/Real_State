@@ -860,33 +860,33 @@ function tryLocalProxy(query) {
 }
 
 function searchMarketProperties(searchParams) {
+  var workerUrl = (typeof AI_CONFIG !== "undefined" && AI_CONFIG.ZENSERP_FUNCTION_URL) || "https://nestfinder-search.nestfinder.workers.dev/api/search";
   var query = buildWebSearchQuery(searchParams);
-  var zenserpUrl = (typeof AI_CONFIG !== "undefined" && AI_CONFIG.ZENSERP_DIRECT_URL) || "https://app.zenserp.com/api/v2/search";
-  var apiKey = (typeof AI_CONFIG !== "undefined" && AI_CONFIG.ZENSERP_API_KEY) || "7c138bd0-7d35-11f1-aee8-ffbee26008df";
 
-  return fetch(zenserpUrl + "?q=" + encodeURIComponent(query) + "&apikey=" + apiKey + "&num=6")
+  return fetch(workerUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query: query, params: searchParams })
+  })
     .then(function(res) {
-      if (!res.ok) throw new Error("Zenserp error: " + res.status);
+      if (!res.ok) throw new Error("Search error: " + res.status);
       return res.json();
     })
     .then(function(data) {
-      if (!data || !Array.isArray(data.organic)) return [];
-      return data.organic.slice(0, 6).map(function(r) {
-        var rawUrl = r.url || r.destination || "";
-        var hostname = "";
-        try { hostname = new URL(rawUrl).hostname; } catch (e) { hostname = ""; }
+      if (!data || !Array.isArray(data.results)) return [];
+      return data.results.slice(0, 6).map(function(r) {
         return {
           title: r.title || "",
-          url: rawUrl,
-          source: hostname,
-          description: r.description || r.snippet || "",
+          url: r.url || "",
+          source: r.source || "",
+          description: r.description || "",
           _webResult: true
         };
       });
     })
     .catch(function(err) {
-      console.error("Zenserp failed:", err);
-      return tryLocalProxy(query);
+      console.error("Worker search failed:", err);
+      return [];
     });
 }
 

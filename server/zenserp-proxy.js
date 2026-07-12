@@ -1,7 +1,7 @@
 const http = require("http");
 const url = require("url");
 
-const ZENSERP_KEY = "7c138bd0-7d35-11f1-aee8-ffbee26008df";
+const ZENSERP_KEY = process.env.ZENSERP_API_KEY || "a7e39350-7e05-11f1-a456-c9d4861a3b63";
 const ZENSERP_ENDPOINT = "https://app.zenserp.com/api/v2/search";
 const PORT = 3001;
 const SEARCH_SITES = ["zameen.com", "graana.com", "agency21.com", "lamudi.pk"];

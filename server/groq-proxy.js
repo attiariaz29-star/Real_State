@@ -2,7 +2,7 @@ const http = require("http");
 const url = require("url");
 require("dotenv").config();
 
-const GROQ_API_KEY = process.env.GROQ_API_KEY || "gsk_xxxxxxxxxxxxxxxxxxxxxxxx";
+const GROQ_API_KEY = process.env.GROQ_API_KEY || "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";
 const GROQ_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions";
 const PORT = 3002;
 
