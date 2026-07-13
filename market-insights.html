@@ -11,6 +11,12 @@
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="css/ai-features.css">
   <style>
+    :root { --bg-body: #fff !important; }
+    [data-bs-theme="dark"] { --bg-body: #000 !important; }
+    body { background: var(--bg-body) !important; }
+
+    .mi-body-wrap { background: var(--bg-body); min-height: 60vh; }
+
     .mi-hero {
       position: relative; padding: 120px 0 60px;
       background: linear-gradient(135deg, #000 0%, #1a1200 50%, #0a0a0a 100%);
@@ -47,6 +53,14 @@
     .mi-trend-down { color: #ef4444; }
     .mi-trend-stable { color: #f59e0b; }
     .mi-badge { font-size: 0.7rem; padding: 0.2rem 0.6rem; border-radius: 6px; font-weight: 700; }
+
+    [data-bs-theme="light"] .mi-card {
+      background: rgba(0,0,0,0.02);
+      border-color: rgba(0,0,0,0.08);
+    }
+    [data-bs-theme="light"] .mi-list li { border-color: rgba(0,0,0,0.06); color: #333; }
+    [data-bs-theme="light"] .mi-stat-lbl { color: rgba(0,0,0,0.5); }
+    [data-bs-theme="light"] .mi-section-title { color: #111; }
   </style>
 </head>
 <body>
@@ -55,12 +69,12 @@
 
   <section class="mi-hero text-center">
     <div class="container">
-      <h1 style="font-size:2.2rem;font-weight:900">Market <span style="color:#f59e0b">Insights</span></h1>
+      <h1 style="font-size:2.2rem;font-weight:900"><span style="color:#fff">Market</span> <span style="color:#f59e0b">Insights</span></h1>
       <p style="color:rgba(255,255,255,0.5);font-size:0.95rem">Real-time real estate market dashboard powered by Firebase data and AI analytics</p>
     </div>
   </section>
 
-  <main style="background:#0d0d0d;min-height:60vh">
+  <main class="mi-body-wrap">
     <div class="mi-container">
       <div class="mi-section" id="marketDashboard">
         <div class="text-center py-5">
@@ -82,7 +96,7 @@
           </div>
           <p class="footer-desc">Pakistan's first AI-powered real estate intelligence platform.</p>
         </div>
-        <div class="col-lg-2 col-md-4">
+        <div class="col-lg-2 col-md-4 offset-lg-1">
           <h3>Navigation</h3>
           <ul class="footer-links">
             <li><a href="index.html">Home</a></li>
@@ -91,7 +105,7 @@
             <li><a href="property.html">Properties</a></li>
           </ul>
         </div>
-        <div class="col-lg-3 col-md-4">
+        <div class="col-lg-3 col-md-4 ms-auto">
           <h3>Services</h3>
           <ul class="footer-links">
             <li><a href="ai-recommendations.html">AI Property Match</a></li>

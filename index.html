@@ -38,6 +38,10 @@ html { scroll-behavior: smooth; }
     --color-yellow: #f59e0b;
     --color-yellow-light: #fcd34d;
     --border-dark: rgba(245, 158, 11, 0.12);
+    --text-light: #111111;
+    --text-dark: #f5f5f5;
+    --text-muted-light: #666666;
+    --text-muted-dark: #888888;
 }
 
 * { box-sizing: border-box; }
@@ -430,13 +434,13 @@ input::placeholder { color: rgba(254, 243, 199, 0.4); }
 .footer-links, .footer-contact { list-style: none; padding: 0; }
 .footer-links li, .footer-contact li { margin-bottom: 0.6rem; }
 .footer-links a {
-    color: rgba(255,255,255,0.65);
+    color: #fff !important;
     text-decoration: none;
     transition: all 0.3s;
     display: inline-block;
     padding: 2px 0;
 }
-.footer-links a:hover { color: var(--color-yellow); }
+.footer-links a:hover { color: var(--color-yellow) !important; }
 .footer-contact { color: #bbb; }
 .nf-footer .footer-contact i { color: var(--color-yellow); }
 .social-links { display: flex; gap: 1rem; }
@@ -883,7 +887,7 @@ table.w-full { width: 100%; }
 .nf-filter-select:hover, .pref-select:hover,
 .nf-filter-input:hover { border-color: rgba(245,158,11,0.4); }
 .nf-filter-select:focus, .pref-select:focus,
-.nf-filter-input:focus { border-color: #facc15; background: rgba(255,255,255,0.08); }
+.nf-filter-input:focus { border-color: #facc15; }
 .nf-filter-select option, .pref-select option { background: #1a1a1a; color: #fff; }
 .nf-filter-input::placeholder { color: rgba(255,255,255,0.3); }
 [data-bs-theme="light"] .nf-filter-select,
@@ -895,7 +899,7 @@ table.w-full { width: 100%; }
 }
 [data-bs-theme="light"] .nf-filter-select:focus,
 [data-bs-theme="light"] .pref-select:focus,
-[data-bs-theme="light"] .nf-filter-input:focus { background: rgba(255,255,255,0.9); }
+[data-bs-theme="light"] .nf-filter-input:focus { }
 [data-bs-theme="light"] .nf-filter-select option,
 [data-bs-theme="light"] .pref-select option { background: #fff; color: #1f1f1f; }
 [data-bs-theme="light"] .nf-filter-input::placeholder { color: rgba(0,0,0,0.3); }
@@ -961,6 +965,8 @@ table.w-full { width: 100%; }
 [data-bs-theme="light"] .nf-chip { color: #4b5563; }
 [data-bs-theme="light"] .nf-chip-active { background: rgba(217,119,6,0.12); color: #92400e; }
 [data-bs-theme="light"] .bg-brand-dark\/90 { background: rgba(249,246,238,0.95); }
+
+
 
 [data-bs-theme="dark"] .navbar { background: #000 !important; }
 [data-bs-theme="light"] .theme-toggle {
@@ -1047,7 +1053,9 @@ table.w-full { width: 100%; }
   outline: none;
   transition: border-color 0.2s;
 }
-.advisor-hero-field::placeholder { color: rgba(255,255,255,0.45); font-size: 0.82rem; }
+.advisor-hero-field::placeholder { color: var(--text-muted); font-size: 0.82rem; }
+.advisor-ai-text, .advisor-prop-title, .advisor-prop-loc, .advisor-prop-specs,
+.advisor-results-heading, .advisor-web-note, .advisor-prop-reason { color: #fff !important; }
 .advisor-hero-field:focus {
   border-color: var(--color-yellow);
   box-shadow: 0 0 0 3px rgba(245,158,11,0.12);
@@ -1220,7 +1228,7 @@ table.w-full { width: 100%; }
   color: var(--text-muted-light);
   margin-bottom: 0.5rem;
 }
-[data-bs-theme="dark"] .advisor-prop-loc { color: var(--text-muted-dark); }
+[data-bs-theme="dark"] .advisor-prop-loc { color: #fff !important; }
 
 .advisor-prop-specs {
   display: flex; gap: 0.75rem;
@@ -1361,35 +1369,21 @@ table.w-full { width: 100%; }
                             <div class="col-auto">
                                 <select id="nf-filter-purpose" class="pref-select" style="min-width:110px;">
                                     <option value="">Purpose</option>
-                                    <option value="For Sale">For Sale</option>
-                                    <option value="For Rent">For Rent</option>
                                 </select>
                             </div>
                             <div class="col-auto">
                                 <select id="nf-filter-type" class="pref-select" style="min-width:110px;">
                                     <option value="">Type</option>
-                                    <option value="House">House</option>
-                                    <option value="Flat">Flat / Apartment</option>
-                                    <option value="Plot">Plot / Land</option>
-                                    <option value="Commercial">Commercial</option>
                                 </select>
                             </div>
                             <div class="col-auto">
                                 <select id="nf-filter-city" class="pref-select" style="min-width:120px;">
                                     <option value="">City</option>
-                                    <option value="Karachi">Karachi</option>
-                                    <option value="Lahore">Lahore</option>
-                                    <option value="Islamabad">Islamabad</option>
                                 </select>
                             </div>
                             <div class="col-auto">
                                 <select id="nf-filter-bedrooms" class="pref-select" style="min-width:95px;">
                                     <option value="">Beds</option>
-                                    <option value="1">1</option>
-                                    <option value="2">2</option>
-                                    <option value="3">3</option>
-                                    <option value="4">4</option>
-                                    <option value="5">5+</option>
                                 </select>
                             </div>
                             <div class="col-auto flex-fill" style="min-width:160px;">
@@ -1720,12 +1714,6 @@ table.w-full { width: 100%; }
                     <span class="brand-text">NestFinder</span><span class="brand-gold">AI</span>
                 </div>
                 <p class="footer-desc">Pakistan's first AI-powered real estate intelligence platform.</p>
-                <div class="social-links">
-                    <a href="#" aria-label="Facebook"><i class="bi bi-facebook"></i></a>
-                    <a href="#" aria-label="Twitter"><i class="bi bi-twitter-x"></i></a>
-                    <a href="#" aria-label="Instagram"><i class="bi bi-instagram"></i></a>
-                    <a href="#" aria-label="LinkedIn"><i class="bi bi-linkedin"></i></a>
-                </div>
             </div>
             <div class="col-lg-2 col-md-4 offset-lg-1">
                 <h3>Navigation</h3>

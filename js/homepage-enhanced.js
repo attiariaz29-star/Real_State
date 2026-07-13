@@ -149,23 +149,25 @@ const HomepageEnhanced = (function() {
   function renderFeaturedAreas() {
     const container = document.getElementById("featuredAreas");
     if (!container) return;
-    const areas = {};
+    const cities = {};
     getProperties().forEach(p => {
       if (!p.location) return;
       const parts = p.location.split(",").map(s => s.trim());
-      const area = parts[0] || "Unknown";
-      areas[area] = (areas[area] || 0) + 1;
+      const city = parts[parts.length - 1] || "Unknown";
+      if (city && city.toLowerCase() !== "unknown") {
+        cities[city] = (cities[city] || 0) + 1;
+      }
     });
-    const sorted = Object.entries(areas).sort((a, b) => b[1] - a[1]).slice(0, 6);
+    const sorted = Object.entries(cities).sort((a, b) => b[1] - a[1]).slice(0, 6);
     if (sorted.length === 0) {
       container.innerHTML = '<div class="text-center text-muted py-3">No featured areas yet.</div>';
       return;
     }
-    container.innerHTML = sorted.map(([area, count]) =>
+    container.innerHTML = sorted.map(([city, count]) =>
       `<div class="col-md-4 col-6 mb-3">
-        <div class="hp-area-card" onclick="window.location.href='property.html?search=${encodeURIComponent(area)}'">
+        <div class="hp-area-card" onclick="window.location.href='area-insight.html?city=${encodeURIComponent(city)}'">
           <div class="hp-area-icon"><i class="bi bi-geo-alt-fill"></i></div>
-          <div class="hp-area-name">${area}</div>
+          <div class="hp-area-name">${city}</div>
           <div class="hp-area-count">${count} listing${count !== 1 ? "s" : ""}</div>
         </div>
       </div>`

@@ -16,6 +16,7 @@
         <li class="nav-item"><a class="nav-link" href="area-insight.html" data-page="area-insight">Area Insights</a></li>
         <li class="nav-item"><a class="nav-link" href="ai-recommendations.html" data-page="ai-recommendations">AI Match</a></li>
         <li class="nav-item"><a class="nav-link" href="market-insights.html" data-page="market-insights">Market</a></li>
+        <li class="nav-item" id="navListingItem" style="display:none;"><a class="nav-link active" href="listing.html" data-page="listing">Listing</a></li>
       </ul>
       <ul class="navbar-nav align-items-center" id="navRightItems">
         <li class="nav-item">
@@ -164,6 +165,7 @@
       'listing.html': 'listing',
       'area-insight.html': 'area-insight',
       'ai-recommendations.html': 'ai-recommendations',
+      'market-insights.html': 'market-insights',
       'acc.html': 'acc',
       'dashboard.html': 'dashboard'
     };
@@ -559,6 +561,11 @@
 
   function bootstrapNavbar() {
     injectNavbar();
+    var page = getPageId();
+    var listingItem = document.getElementById('navListingItem');
+    if (listingItem) {
+      listingItem.style.display = page === 'listing' ? '' : 'none';
+    }
     highlightActive();
     initTheme();
     initScrolled();

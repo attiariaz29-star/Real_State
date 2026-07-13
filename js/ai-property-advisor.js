@@ -201,7 +201,15 @@
       })
       .then(function (data) {
         if (!data || !Array.isArray(data.results)) return [];
-        return data.results.slice(0, 6).map(function (r) {
+        return data.results.slice(0, 12).filter(function (r) {
+          // Only include results that match the requested city
+          if (params.city) {
+            var titleAndDesc = ((r.title || "") + " " + (r.description || "")).toLowerCase();
+            var requestedCity = params.city.toLowerCase();
+            if (titleAndDesc.indexOf(requestedCity) === -1) return false;
+          }
+          return true;
+        }).slice(0, 6).map(function (r) {
           return {
             title: r.title || "",
             url: r.url || "",
@@ -219,7 +227,7 @@
 
   function buildWebSearchQuery(params) {
     var parts = [];
-    var SEARCH_SITES = ["zameen.com", "graana.com", "agency21.com", "lamudi.pk"];
+    var SEARCH_SITES = ["zameen.com", "graana.com", "olx.com.pk", "lamudi.pk"];
     var siteFilter = SEARCH_SITES.map(function (s) { return "site:" + s; }).join(" OR ");
     if (params.type && params.type !== "all" && params.type !== "") parts.push('"' + params.type + '"');
     if (params.bedrooms > 0) parts.push(params.bedrooms + " bedroom");
@@ -294,7 +302,14 @@
     // City
     if (/karachi|khi/i.test(q)) params.city = "Karachi";
     else if (/lahore/i.test(q)) params.city = "Lahore";
-    else if (/islamabad|rawalpindi/i.test(q)) params.city = "Islamabad";
+    else if (/rawalpindi|rwp/i.test(q)) params.city = "Rawalpindi";
+    else if (/islamabad/i.test(q)) params.city = "Islamabad";
+    else if (/faisalabad/i.test(q)) params.city = "Faisalabad";
+    else if (/multan/i.test(q)) params.city = "Multan";
+    else if (/peshawar/i.test(q)) params.city = "Peshawar";
+    else if (/quetta/i.test(q)) params.city = "Quetta";
+    else if (/gujranwala/i.test(q)) params.city = "Gujranwala";
+    else if (/hyderabad/i.test(q)) params.city = "Hyderabad";
 
     // Area
     var areas = ["dha", "gulshan", "gulberg", "clifton", "bahria", "f-?10", "f-?11", "f-?7", "f-?8", "e-?11", "saddar", "defence"];
@@ -405,6 +420,29 @@
     });
   }
 
+  function normalizeCity(city) {
+    var map = {
+      "karachi": "Karachi", "khi": "Karachi",
+      "lahore": "Lahore",
+      "rawalpindi": "Rawalpindi", "rwp": "Rawalpindi",
+      "islamabad": "Islamabad",
+      "faisalabad": "Faisalabad",
+      "multan": "Multan",
+      "peshawar": "Peshawar",
+      "quetta": "Quetta",
+      "gujranwala": "Gujranwala",
+      "hyderabad": "Hyderabad", "hbd": "Hyderabad"
+    };
+    return map[(city || "").toLowerCase().trim()] || "";
+  }
+
+  function propertyMatchesCity(property, city) {
+    if (!city) return true;
+    var loc = (property.location || "").toLowerCase();
+    var nc = city.toLowerCase();
+    return loc.indexOf(nc) !== -1;
+  }
+
   function matchProperties(params) {
     if (!allProperties.length) return [];
     var results = [];
@@ -416,16 +454,13 @@
 
       if (p.status === "Disabled" || p.status === "Sold" || p.status === "Rented") return;
 
-      // City match (weight: 25)
+      // City match (weight: 25) — HARD REQUIREMENT: if city specified, property MUST be in that city
       if (params.city) {
-        totalWeight += 25;
-        var city = getPropertyCity(p.location).toLowerCase();
-        var loc = (p.location || "").toLowerCase();
-        if (city.indexOf(params.city.toLowerCase()) !== -1 || loc.indexOf(params.city.toLowerCase()) !== -1) {
-          score += 25;
-          matches.push("city");
-        }
+        if (!propertyMatchesCity(p, params.city)) return;
+        score += 25;
+        matches.push("city");
       }
+      totalWeight += 25;
 
       // Area match (weight: 20)
       if (params.area) {
@@ -510,7 +545,7 @@
 
       if (totalWeight === 0) totalWeight = 1;
       var pct = Math.round((score / totalWeight) * 100);
-      if (pct >= 30) {
+      if (pct >= 50) {
         p._matchScore = pct;
         p._matches = matches;
         results.push(p);
@@ -555,7 +590,21 @@
       expanded.push(bedUp);
     }
 
-    // Similar types
+    // Relax bathroom constraint by 1
+    if (params.bathrooms > 1) {
+      var bath = JSON.parse(JSON.stringify(base));
+      bath.bathrooms = params.bathrooms - 1;
+      bath._label = params.bathrooms + " bath not available, trying " + (params.bathrooms - 1) + " bath";
+      expanded.push(bath);
+    }
+    if (params.bathrooms > 0) {
+      var bathUp = JSON.parse(JSON.stringify(base));
+      bathUp.bathrooms = params.bathrooms + 1;
+      bathUp._label = params.bathrooms + " bath not available, trying " + (params.bathrooms + 1) + " bath";
+      expanded.push(bathUp);
+    }
+
+    // Similar types (same city only — never change city)
     if (params.type && CONFIG.SIMILAR_TYPES_FALLBACK) {
       var typeMap = {
         "House": ["Villa", "Apartment"],
@@ -571,18 +620,9 @@
       similar.forEach(function (t) {
         var s = JSON.parse(JSON.stringify(base));
         s.type = t;
-        s._label = "Similar type: " + t;
+        s._label = "Similar type: " + t + " in " + (params.city || "same area");
         expanded.push(s);
       });
-    }
-
-    // Remove city filter to search nationwide
-    if (params.city) {
-      var noCity = JSON.parse(JSON.stringify(base));
-      noCity.city = "";
-      noCity.area = "";
-      noCity._label = "Searching all cities";
-      expanded.push(noCity);
     }
 
     return expanded;
@@ -634,16 +674,14 @@
   }
 
   function generateNoResultsResponse(params, alternatives) {
-    var prompt =
-      "You are NestFinder AI. A user searched for properties with these criteria but no exact matches were found:\n" +
-      JSON.stringify(params, null, 2) + "\n\n" +
-      "We found " + alternatives.length + " alternative suggestions by relaxing some criteria. " +
-      "Write ONE helpful sentence (max 25 words) explaining that we found alternatives with adjusted criteria, " +
-      "and encourage the user to check them out or try a different search.";
-
-    return AIEngine.callGroq(prompt, "You are a helpful real estate assistant. One sentence, max 25 words. Never apologize excessively.", 0.3).then(function (r) {
-      return r || ("I couldn't find an exact match, but here are " + alternatives.length + " close alternatives you might like.");
-    });
+    var criteria = [];
+    if (params.type) criteria.push(params.type);
+    if (params.bedrooms > 0) criteria.push(params.bedrooms + "-bedroom");
+    if (params.city) criteria.push("in " + params.city);
+    if (params.area) criteria.push(params.area);
+    var criteriaStr = criteria.length > 0 ? criteria.join(" ") : "your criteria";
+    var altDesc = alternatives.length > 0 ? " Showing " + alternatives.length + " close alternative" + (alternatives.length > 1 ? "s" : "") + " from " + (params.city || "same location") + " with adjusted criteria." : "";
+    return Promise.resolve("No exact match found for " + criteriaStr + "." + altDesc);
   }
 
   function generateAreaAdvice(params) {
@@ -767,7 +805,7 @@
             generateNoResultsResponse(params, topAlts)
           ]).then(function (results) {
             removeTypingIndicator();
-            addPropertyResults(topAlts, results[1] ? [] : results[0], results[1] || "I couldn't find an exact match in our database. Showing closest alternatives:");
+            addPropertyResults(topAlts, results[0] || [], results[1] || "No exact match found. Showing closest alternatives:");
             setLoading(false);
           });
         } else {

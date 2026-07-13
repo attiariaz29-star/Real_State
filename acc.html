@@ -182,7 +182,7 @@ body {
 .footer-brand .brand-gold { color: var(--color-yellow); }
 .footer-desc { margin-bottom: 1.5rem; max-width: 300px; }
 .nf-footer h3 {
-    color: #fff;
+    color: var(--color-yellow) !important;
     font-size: 1rem;
     font-weight: 700;
     margin-bottom: 1.2rem;
@@ -192,11 +192,11 @@ body {
 .footer-links, .footer-contact { list-style: none; padding: 0; }
 .footer-links li, .footer-contact li { margin-bottom: 0.6rem; }
 .footer-links a {
-    color: rgba(255,255,255,0.6);
+    color: #fff !important;
     text-decoration: none;
     transition: color 0.3s;
 }
-.footer-links a:hover { color: var(--color-yellow); }
+.footer-links a:hover { color: var(--color-yellow) !important; }
 .footer-contact { color: rgba(255,255,255,0.6); }
 .footer-contact i { color: var(--color-yellow); }
 .social-links { display: flex; gap: 1rem; }
@@ -311,6 +311,7 @@ body {
     margin-bottom: 0.75rem;
 }
 [data-bs-theme="light"] .nf-card-location { color: #6b7280; }
+[data-bs-theme="dark"] .nf-card-location { color: #fff !important; }
 .nf-card-footer {
     padding: 1rem 1.25rem;
     border-top: 1px solid rgba(255,255,255,0.1);
@@ -971,6 +972,16 @@ body {
                 <div class="invalid-feedback">Please specify a valid price.</div>
               </div>
             </div>
+            <div class="col-md-4 mb-3">
+              <label for="prop-budget" class="form-label">Budget Tier</label>
+              <select id="prop-budget" class="form-select">
+                <option value="">Auto (based on price)</option>
+                <option value="Budget">Budget</option>
+                <option value="Mid Range">Mid Range</option>
+                <option value="Premium">Premium</option>
+                <option value="Luxury">Luxury</option>
+              </select>
+            </div>
           </div>
 
           <div class="mb-4">
@@ -1143,14 +1154,8 @@ body {
                     <span class="brand-text">NestFinder</span><span class="brand-gold">AI</span>
                 </div>
                 <p class="footer-desc">Pakistan's first AI-powered real estate intelligence platform.</p>
-                <div class="social-links">
-                    <a href="#" aria-label="Facebook"><i class="bi bi-facebook"></i></a>
-                    <a href="#" aria-label="Twitter"><i class="bi bi-twitter-x"></i></a>
-                    <a href="#" aria-label="Instagram"><i class="bi bi-instagram"></i></a>
-                    <a href="#" aria-label="LinkedIn"><i class="bi bi-linkedin"></i></a>
-                </div>
             </div>
-            <div class="col-lg-2 col-md-4">
+            <div class="col-lg-2 col-md-4 offset-lg-1">
                 <h3>Navigation</h3>
                 <ul class="footer-links">
                     <li><a href="index.html">Home</a></li>
@@ -1159,20 +1164,12 @@ body {
                     <li><a href="property.html">Properties</a></li>
                 </ul>
             </div>
-            <div class="col-lg-3 col-md-4">
+            <div class="col-lg-3 col-md-4 ms-auto">
                 <h3>Services</h3>
                 <ul class="footer-links">
                     <li><a href="ai-recommendations.html">AI Property Match</a></li>
                     <li><a href="area-insight.html">Area Intelligence</a></li>
                     <li><a href="property.html">Browse Listings</a></li>
-                </ul>
-            </div>
-            <div class="col-lg-3 col-md-4">
-                <h3>Contact</h3>
-                <ul class="footer-contact">
-                    <li><i class="bi bi-geo-alt me-2"></i>Karachi, Pakistan</li>
-                    <li><i class="bi bi-envelope me-2"></i>hello@nestfinder.ai</li>
-                    <li><i class="bi bi-telephone me-2"></i>+92 300 1234567</li>
                 </ul>
             </div>
         </div>
@@ -1664,11 +1661,13 @@ if (propertyForm) {
         const images = uploadedImages.length ? uploadedImages : [fallbackImage];
 
         const category = purpose === 'Rent' ? 'For Rent' : 'For Sale';
-        let budgetCategory;
-        if (purpose === 'Rent') {
-            budgetCategory = price >= 3000 ? 'Luxury' : price >= 1200 ? 'Premium' : 'Budget';
-        } else {
-            budgetCategory = price >= 1000000 ? 'Luxury' : price >= 400000 ? 'Premium' : 'Budget';
+        let budgetCategory = document.getElementById('prop-budget').value;
+        if (!budgetCategory) {
+            if (purpose === 'Rent') {
+                budgetCategory = price >= 5000 ? 'Luxury' : price >= 2500 ? 'Premium' : price >= 1200 ? 'Mid Range' : 'Budget';
+            } else {
+                budgetCategory = price >= 2000000 ? 'Luxury' : price >= 800000 ? 'Premium' : price >= 400000 ? 'Mid Range' : 'Budget';
+            }
         }
         const priceDisplay = purpose === 'Rent'
             ? '$' + price.toLocaleString() + '/mo'
@@ -1743,6 +1742,7 @@ window.editListing = async function(id) {
     document.getElementById('prop-size').value = p.area || '';
     document.getElementById('prop-phone').value = (p.contactInfo && p.contactInfo.phone) || '';
     document.getElementById('prop-email').value = (p.contactInfo && p.contactInfo.email) || '';
+    document.getElementById('prop-budget').value = p.budgetCategory || '';
 
     loadExistingImagePreviews(p.images || (p.image ? [p.image] : []));
     updatePreview();

@@ -231,6 +231,7 @@
 .ai-card-title { font-size: 0.95rem; font-weight: 600; color: #111; margin-bottom: 0.3rem; line-height: 1.4; }
 [data-bs-theme="dark"] .ai-card-title { color: #f0f0f0; }
 .ai-card-loc   { font-size: 0.8rem; color: #888; display: flex; align-items: center; gap: 0.25rem; margin-bottom: 0.85rem; }
+[data-bs-theme="dark"] .ai-card-loc { color: #fff !important; }
 .ai-card-specs {
   display: flex; gap: 1rem; font-size: 0.78rem; color: #888;
   border-top: 1px solid #f0e8c8; padding-top: 0.75rem;
@@ -637,9 +638,9 @@
 .nf-footer .footer-desc { color: rgba(255,255,255,0.6) !important; }
 .nf-footer .social-links a { color: rgba(255,255,255,0.5) !important; }
 .nf-footer .social-links a:hover { color: #000 !important; }
-.nf-footer h3 { color: #f59e0b !important; }
+.nf-footer h3 { color: #f59e0b !important; font-size: 1.1rem; font-weight: 600; }
 .nf-footer .footer-links a,
-.nf-footer a { color: rgba(255,255,255,0.65) !important; }
+.nf-footer a { color: #fff !important; font-size: 0.95rem; }
 .nf-footer .footer-links a:hover,
 .nf-footer a:hover { color: #f59e0b !important; }
 .nf-footer .footer-contact li { color: rgba(255,255,255,0.6); }

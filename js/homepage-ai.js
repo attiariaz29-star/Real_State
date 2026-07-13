@@ -51,11 +51,59 @@ async function loadAllProperties() {
 }
 
 // Re-fetch whenever Firebase data changes or tab regains focus
-if (typeof propertiesDbRef !== 'undefined') {
-  propertiesDbRef.on('child_changed', function() { loadAllProperties(); });
-  propertiesDbRef.on('child_removed', function() { loadAllProperties(); });
+function refreshAllData() {
+  loadAllProperties().then(function() {
+    if (_nfAllProperties) populateHomeFilters(_nfAllProperties);
+  });
 }
-window.addEventListener('focus', function() { loadAllProperties(); });
+if (typeof propertiesDbRef !== 'undefined') {
+  propertiesDbRef.on('child_changed', function() { refreshAllData(); });
+  propertiesDbRef.on('child_removed', function() { refreshAllData(); });
+}
+window.addEventListener('focus', function() { refreshAllData(); });
+
+function extractCityFromLoc(loc) {
+  if (!loc) return "";
+  var parts = loc.split(",").map(function(s) { return s.trim(); });
+  return parts[parts.length - 1] || "";
+}
+
+function populateHomeFilters(props) {
+  if (!props) props = _nfAllProperties || [];
+  var cities = {}, types = {}, categories = {}, beds = {};
+  props.forEach(function(p) {
+    var c = extractCityFromLoc(p.location);
+    if (c) cities[c] = true;
+    if (p.type) types[p.type] = true;
+    if (p.category) categories[p.category] = true;
+    if (p.bedrooms > 0) {
+      if (p.bedrooms >= 10) beds["10+"] = true;
+      else beds[p.bedrooms] = true;
+    }
+  });
+
+  function setOptions(sel, values, allLabel) {
+    var val = sel.value;
+    sel.innerHTML = '<option value="">' + allLabel + '</option>';
+    var keys = Object.keys(values).sort(function(a, b) {
+      var na = parseInt(a, 10), nb = parseInt(b, 10);
+      if (!isNaN(na) && !isNaN(nb)) return na - nb;
+      return a.localeCompare(b);
+    });
+    keys.forEach(function(k) {
+      var opt = document.createElement("option");
+      opt.value = k;
+      opt.textContent = k;
+      sel.appendChild(opt);
+    });
+    if (val && keys.indexOf(val) !== -1) sel.value = val;
+  }
+
+  setOptions(document.getElementById("nf-filter-purpose"), categories, "Purpose");
+  setOptions(document.getElementById("nf-filter-type"), types, "Type");
+  setOptions(document.getElementById("nf-filter-city"), cities, "City");
+  setOptions(document.getElementById("nf-filter-bedrooms"), beds, "Beds");
+}
 
 function formatPriceHomepage(n, category) {
   if (!n && n !== 0) return "PKR —";
@@ -524,7 +572,15 @@ function simpleQueryParser(query) {
   // City detection
   if (/karachi|khi/i.test(q)) params.city = "Karachi";
   else if (/lahore/i.test(q)) params.city = "Lahore";
-  else if (/islamabad|rawalpindi|bahria/i.test(q)) params.city = "Islamabad";
+  else if (/rawalpindi|rwp/i.test(q)) params.city = "Rawalpindi";
+  else if (/islamabad/i.test(q)) params.city = "Islamabad";
+  else if (/bahria/i.test(q) && !params.city) params.city = "Rawalpindi";
+  else if (/faisalabad/i.test(q)) params.city = "Faisalabad";
+  else if (/multan/i.test(q)) params.city = "Multan";
+  else if (/peshawar/i.test(q)) params.city = "Peshawar";
+  else if (/quetta/i.test(q)) params.city = "Quetta";
+  else if (/gujranwala/i.test(q)) params.city = "Gujranwala";
+  else if (/hyderabad/i.test(q)) params.city = "Hyderabad";
 
   // Area detection
   var areas = ["dha", "gulshan", "gulberg", "clifton", "bahria", "f-?10", "f-?11", "f-?7", "f-?8", "e-?11", "e-?7", "saddar", "defence", "sector", "phase"];
@@ -660,7 +716,7 @@ async function processSearchQuery(rawQuery, chatArea, typingIndicator) {
   // Try Groq first, fallback to simple parser
   var searchParams = null;
   try {
-    var systemPrompt = "You are the search-query parser for NestFinder. Read the user's property search and return ONLY a valid JSON object with these keys:\n{\n  \"type\": one of \"all\",\"House\",\"Apartment\",\"Villa\",\"Plot\",\"Commercial\",\"Penthouse\",\"Office\",\"Shop\",\n  \"beds\": one of \"all\",\"1\",\"2\",\"3\",\"4\",\"5\",\"6\",\"8\",\"10+\",\n  \"baths\": one of \"all\",\"1\",\"2\",\"3\",\"4\",\"5\",\"6\",\"8\",\"10+\",\n  \"category\": one of \"all\",\"For Sale\",\"For Rent\",\n  \"budget\": one of \"all\",\"Budget\",\"Premium\",\"Luxury\",\n  \"minPrice\": number (raw PKR) or 0,\n  \"maxPrice\": number (raw PKR) or 0,\n  \"keywords\": string (city/area name or leftover terms) or \"\",\n  \"reply\": a short one-sentence confirmation\n}\nConvert crore*10000000, lakh/lac*100000.";
+    var systemPrompt = "You are the search-query parser for NestFinder. Read the user's property search and return ONLY a valid JSON object with these keys:\n{\n  \"type\": one of \"all\",\"House\",\"Apartment\",\"Villa\",\"Plot\",\"Commercial\",\"Penthouse\",\"Office\",\"Shop\",\n  \"beds\": one of \"all\",\"1\",\"2\",\"3\",\"4\",\"5\",\"6\",\"8\",\"10+\",\n  \"baths\": one of \"all\",\"1\",\"2\",\"3\",\"4\",\"5\",\"6\",\"8\",\"10+\",\n  \"category\": one of \"all\",\"For Sale\",\"For Rent\",\n  \"budget\": one of \"all\",\"Budget\",\"Premium\",\"Luxury\",\n  \"minPrice\": number (raw PKR) or 0,\n  \"maxPrice\": number (raw PKR) or 0,\n  \"city\": string (city name extracted from query, or \"\" if none),\n  \"area\": string (neighborhood name extracted from query, or \"\" if none),\n  \"keywords\": string (any remaining search terms not covered by city/area/type) or \"\",\n  \"reply\": a short one-sentence confirmation\n}\nConvert crore*10000000, lakh/lac*100000. City must be one of: Karachi, Lahore, Islamabad, Rawalpindi, Faisalabad, Multan, Peshawar, Quetta, or empty string.";
     var response = await AIEngine.callGroq(rawQuery, systemPrompt, 0.2);
     if (response) {
       var cleaned = response.replace(/```json|```/g, "").trim();
@@ -697,11 +753,21 @@ async function processSearchQuery(rawQuery, chatArea, typingIndicator) {
     }
     if (searchParams.minPrice > 0 && p.price < searchParams.minPrice) return false;
     if (searchParams.maxPrice > 0 && p.price > searchParams.maxPrice) return false;
+    // City filter — hard requirement if city specified
+    if (searchParams.city) {
+      var loc = (p.location || "").toLowerCase();
+      if (loc.indexOf(searchParams.city.toLowerCase()) === -1) return false;
+    }
+    // Area filter within same city
+    if (searchParams.area) {
+      var loc2 = (p.location || "").toLowerCase();
+      if (loc2.indexOf(searchParams.area.toLowerCase()) === -1) return false;
+    }
     if (searchParams.keywords) {
       var kw = searchParams.keywords.toLowerCase();
       var title = (p.title || "").toLowerCase();
-      var loc = (p.location || "").toLowerCase();
-      if (!title.includes(kw) && !loc.includes(kw)) return false;
+      var loc3 = (p.location || "").toLowerCase();
+      if (!title.includes(kw) && !loc3.includes(kw)) return false;
     }
     return true;
   });
@@ -812,9 +878,11 @@ function buildWebSearchQuery(searchParams) {
   if (searchParams.type && searchParams.type !== "all") parts.push(searchParams.type);
   if (searchParams.category && searchParams.category !== "all") parts.push(searchParams.category.toLowerCase().replace("for ", ""));
   if (searchParams.beds && searchParams.beds !== "all") parts.push(searchParams.beds + " bedroom");
+  if (searchParams.city) parts.push(searchParams.city);
+  if (searchParams.area) parts.push(searchParams.area);
   if (searchParams.keywords) parts.push(searchParams.keywords);
   if (parts.length === 0) parts.push("property for sale");
-  return parts.join(" ") + " site:zameen.com OR site:graana.com OR site:agency21.com OR site:lamudi.pk";
+  return parts.join(" ") + " site:zameen.com OR site:graana.com OR site:olx.com.pk OR site:lamudi.pk";
 }
 
 function searchDuckDuckGo(query) {
@@ -874,7 +942,13 @@ function searchMarketProperties(searchParams) {
     })
     .then(function(data) {
       if (!data || !Array.isArray(data.results)) return [];
-      return data.results.slice(0, 6).map(function(r) {
+      return data.results.slice(0, 12).filter(function(r) {
+        if (searchParams.city) {
+          var titleAndDesc = ((r.title || "") + " " + (r.description || "")).toLowerCase();
+          if (titleAndDesc.indexOf(searchParams.city.toLowerCase()) === -1) return false;
+        }
+        return true;
+      }).slice(0, 6).map(function(r) {
         return {
           title: r.title || "",
           url: r.url || "",
@@ -1001,6 +1075,7 @@ async function processSearch() {
   if (type) searchParams.set("type", type);
   else if (params.type) searchParams.set("type", params.type);
   if (city) searchParams.set("city", city);
+  else if (params.city) searchParams.set("city", params.city);
   if (beds) searchParams.set("beds", beds);
   else if (params.beds) searchParams.set("beds", params.beds);
   if (params.baths) searchParams.set("baths", params.baths);
@@ -1305,6 +1380,9 @@ document.addEventListener("DOMContentLoaded", function() {
   // Fire data load after a microtask so paint completes first.
   Promise.resolve().then(function() {
     onPropertiesReady(function(props) {
+      // 0. Populate filter dropdowns from live data
+      populateHomeFilters(props);
+
       // 1. Stats (lightweight, update immediately)
       updateRealStats(props);
 

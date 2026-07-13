@@ -1150,9 +1150,24 @@ Respond with ONLY a JSON object: { "summary": "your summary here" }`;
     if (filterCity) filterCity.addEventListener("change", applyFilters);
     if (filterPurpose) filterPurpose.addEventListener("change", applyFilters);
 
+    // Read URL param for city auto-filter
+    function getUrlParam(name) {
+      const params = new URLSearchParams(window.location.search);
+      return params.get(name) || "";
+    }
+
     // Start Firebase listener
     startFirebaseListener(async (filtered) => {
       populateCityDropdown();
+      const urlCity = getUrlParam("city");
+      if (urlCity && filterCity) {
+        const options = Array.from(filterCity.options).map(o => o.value);
+        const match = options.find(o => o.toLowerCase() === urlCity.toLowerCase());
+        if (match) {
+          filterCity.value = match;
+          applyFilters();
+        }
+      }
       await refreshData(filtered);
     });
   }
